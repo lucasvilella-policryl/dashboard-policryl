@@ -63,10 +63,9 @@ function resolveMetasFor(filters){
 
 // Configuração do Google Sheets
 const CONFIG = {
-    SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
-    API_KEY: 'AIzaSyDBRuUuQZoLWaT4VSPuiPHGt0J4iviWR2g',
-    SHEET_NAME: 'PEDIDOS GERAL',
-    RANGE: 'A:AE' // Todas as colunas até AE
+  SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
+  SHEET_NAME: 'PEDIDOS GERAL', // ou o nome EXATO da sua aba de dados principal
+  RANGE: 'A:AO'
 };
 
 // Mapeamento de colunas (baseado na sua planilha)
