@@ -414,10 +414,7 @@ function createHistoricoChart(filters) {
 
 function createPagamentoChart(filters) {
     const ctx = document.getElementById('pagamentoChart');
-    if (!ctx) {
-        console.error('❌ Canvas pagamentoChart não encontrado!');
-        return;
-    }
+    if (!ctx) return;
     if (pagamentoChart) pagamentoChart.destroy();
     
     const dataRow = aggregateData(filters);
@@ -426,56 +423,31 @@ function createPagamentoChart(filters) {
     const valorCartao = dataRow ? parseValue(dataRow[COLS.VALORES_CARTAO]) : 0;
     const valorBoleto = dataRow ? parseValue(dataRow[COLS.VALORES_BOLETO]) : 0;
     
-    console.log('💳 Pagamentos:', { valorPix, valorCartao, valorBoleto });
-    
-    // Se todos forem zero, coloca valores mínimos para visualização
-    const dados = [valorPix, valorCartao, valorBoleto];
-    const temDados = dados.some(v => v > 0);
-    
     pagamentoChart = new Chart(ctx.getContext('2d'), {
         type: 'doughnut',
         data: {
-            labels: ['PIX', 'Cartão Crédito', 'Boleto'],
+            labels: ['PIX', 'Cartão', 'Boleto'],
             datasets: [{
-                data: temDados ? dados : [1, 1, 1], // Mock se não tiver dados
+                data: [valorPix, valorCartao, valorBoleto],
                 backgroundColor: ['#22c55e', '#3b82f6', '#8b5cf6'],
-                borderWidth: 3,
-                borderColor: '#1e293b',
-                hoverOffset: 10
+                borderWidth: 2,
+                borderColor: '#1e293b'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { 
-                    position: 'bottom', 
-                    labels: { 
-                        color: '#e2e8f0',
-                        font: { size: 12 },
-                        padding: 15
-                    } 
-                },
+                legend: { position: 'bottom', labels: { color: '#e2e8f0' } },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#f1f5f9',
-                    bodyColor: '#cbd5e1',
-                    borderColor: '#8b5cf6',
-                    borderWidth: 1,
-                    padding: 12,
                     callbacks: {
-                        label: (context) => {
-                            if (!temDados) return context.label + ': Sem dados';
-                            return context.label + ': ' + formatCurrency(context.parsed);
-                        }
+                        label: (context) => context.label + ': ' + formatCurrency(context.parsed)
                     }
                 }
             },
             cutout: '65%'
         }
     });
-    
-    console.log('✅ Gráfico de pagamentos criado');
 }
 
 function createRegiaoChart(filters) {
