@@ -1,13 +1,3 @@
-function debugHeaders() {
-    console.log('🔍 TODOS OS CABEÇALHOS:');
-    HEADERS.forEach((header, index) => {
-        console.log(`${index}: "${header}"`);
-    });
-}
-
-// Chame no updateDashboard(), após carregar os dados
-debugHeaders();
-
 // === [INJECTED] Utils & Metas (GVIZ) =========================================
 const PT3_TO_MM = {
   'JAN':'01','FEV':'02','MAR':'03','ABR':'04','MAI':'05','JUN':'06',
