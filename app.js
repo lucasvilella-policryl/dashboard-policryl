@@ -63,7 +63,7 @@ function resolveMetasFor(filters){
 // Configuração do Google Sheets
 const CONFIG = {
     SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
-    // API_KEY não é mais necessária com a abordagem GVIZ
+    API_KEY: 'AIzaSyDBRuUuQZoLWaT4VSPuiPHGt0J4iviWR2g',
     SHEET_NAME: 'PEDIDOS GERAL',
     RANGE: 'A:AE'
 };
