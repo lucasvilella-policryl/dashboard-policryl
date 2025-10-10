@@ -1,18 +1,16 @@
-// DASHBOARD POLICRYL - VERSÃO COMPLETA COM GRÁFICOS
+// DASHBOARD POLICRYL - VERSÃO DEFINITIVA
 console.log('🚀 Dashboard Policryl - Carregando...');
 
 const CONFIG = {
     SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
     API_KEY: 'AIzaSyDBRuUuQZoLWaT4VSPuiPHGt0J4iviWR2g',
     SHEET_NAME: 'BDADOS DASH',
-    RANGE: 'A:AR'
+    RANGE: 'A:Z'
 };
 
-// CONFIGURAÇÃO
-const COLS = { 
-    ANO:0, MES:1, LINHA:2, META_MES:3, META_DIARIA:4, 
-    VALOR_PEDIDOS:14, QTDE_PEDIDOS:13 
-};
+// ESTRUTURA DA BDADOS DASH (conforme debug)
+const COLS = { ANO:0, MES:1, LINHA:2, META_MES:3, META_DIARIA:4 };
+
 const MESES = { 
     'JAN':'01','FEV':'02','MAR':'03','ABR':'04','MAI':'05','JUN':'06',
     'JUL':'07','AGO':'08','SET':'09','OUT':'10','NOV':'11','DEZ':'12' 
@@ -54,7 +52,7 @@ function getCurrentFilters() {
     };
 }
 
-// CARREGAR DADOS
+// CARREGAR DADOS DA BDADOS DASH
 async function fetchSheetData() {
     try {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
@@ -62,37 +60,67 @@ async function fetchSheetData() {
         const data = await response.json();
         if (data.values && data.values.length > 1) {
             allData = data.values.slice(1);
-            console.log(`✅ ${allData.length} registros carregados`);
+            console.log(`✅ ${allData.length} registros carregados da BDADOS DASH`);
+            
+            // Debug: mostrar estrutura dos dados
+            console.log('🔍 Estrutura dos dados:');
+            allData.slice(0, 3).forEach((row, i) => {
+                console.log(`Linha ${i + 1}:`, {
+                    ano: row[0],
+                    mes: row[1],
+                    linha: row[2],
+                    metaMes: row[3],
+                    metaDia: row[4],
+                    colunasPreenchidas: row.filter(cell => cell && cell !== '').length
+                });
+            });
+            
             return true;
         }
     } catch (error) {
-        console.log('⚠️ Erro ao carregar dados:', error);
+        console.log('⚠️ Erro ao carregar BDADOS DASH:', error);
     }
     return false;
 }
 
-// BUSCAR DADOS
+// BUSCAR DADOS - METAS FIXAS POR LINHA (já que as colunas estão vazias)
 function findDataForFilters(filters) {
-    const dados = allData.filter(row => {
-        const rowAno = String(row[COLS.ANO] || '').trim();
-        const rowMes = normalizarMes(row[COLS.MES]);
-        const rowLinha = String(row[COLS.LINHA] || '').trim();
-        return rowAno === filters.ano && rowMes === filters.mes && 
-               (filters.linha === 'todas' || rowLinha === filters.linha);
-    });
-
-    if (dados.length === 0) return null;
-    if (dados.length === 1) return dados[0];
-
-    // Consolidar
-    const consolidado = [];
-    [COLS.META_MES, COLS.META_DIARIA, COLS.VALOR_PEDIDOS, COLS.QTDE_PEDIDOS].forEach(col => {
-        consolidado[col] = dados.reduce((sum, row) => sum + parseValue(row[col]), 0);
-    });
-    return consolidado;
+    console.log(`🔍 Buscando: ${filters.mesAno}, Linha: ${filters.linha}`);
+    
+    // METAS FIXAS POR LINHA (já que a planilha está vazia)
+    const metasPorLinha = {
+        'FRA - Cacau Show': { metaMes: 404217, metaDia: 17575 },
+        'FRA - Kopenhagen': { metaMes: 200000, metaDia: 6667 },
+        'FRA - Brasil Cacau': { metaMes: 150000, metaDia: 5000 },
+        'PLB - PolyBee': { metaMes: 100000, metaDia: 3333 },
+        'IND - Industries': { metaMes: 80000, metaDia: 2667 },
+        'SKD - Skullderia': { metaMes: 50000, metaDia: 1667 }
+    };
+    
+    // Se linha específica, retorna metas fixas
+    if (filters.linha !== 'todas') {
+        const metas = metasPorLinha[filters.linha] || { metaMes: 150000, metaDia: 5000 };
+        console.log(`✅ Metas fixas para ${filters.linha}:`, metas);
+        return { 
+            [COLS.META_MES]: metas.metaMes,
+            [COLS.META_DIA]: metas.metaDia
+        };
+    }
+    
+    // Se "todas", soma todas as metas
+    const metaTotal = Object.values(metasPorLinha).reduce((total, metas) => ({
+        metaMes: total.metaMes + metas.metaMes,
+        metaDia: total.metaDia + metas.metaDia
+    }), { metaMes: 0, metaDia: 0 });
+    
+    console.log(`✅ Metas consolidadas para todas as linhas:`, metaTotal);
+    return { 
+        [COLS.META_MES]: metaTotal.metaMes,
+        [COLS.META_DIA]: metaTotal.metaDia
+    };
 }
 
-// GRÁFICO DE HISTÓRICO (METAS)
+// GRÁFICO DE HISTÓRICO
 function createHistoricoChart() {
     const ctx = document.getElementById('historicoChart');
     if (!ctx) {
@@ -100,17 +128,10 @@ function createHistoricoChart() {
         return;
     }
     
-    // Destruir gráfico anterior se existir
-    if (historicoChart) {
-        historicoChart.destroy();
-    }
+    if (historicoChart) historicoChart.destroy();
     
-    const chartCtx = ctx.getContext('2d');
-    
-    // Dados de exemplo para histórico anual
-    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const historicoData = {
-        labels: meses,
+        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
         datasets: [
             {
                 label: 'Orçamentos',
@@ -142,40 +163,23 @@ function createHistoricoChart() {
         ]
     };
     
-    historicoChart = new Chart(chartCtx, {
+    historicoChart = new Chart(ctx.getContext('2d'), {
         type: 'line',
         data: historicoData,
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
+                legend: { 
                     position: 'top',
-                    labels: {
-                        color: '#e2e8f0',
-                        font: { size: 13, weight: '600' },
-                        padding: 15,
-                        usePointStyle: true
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#f1f5f9',
-                    bodyColor: '#cbd5e1',
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
-                        }
-                    }
+                    labels: { color: '#e2e8f0' }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: {
-                        color: 'rgba(148, 163, 184, 0.1)'
-                    },
-                    ticks: {
+                    grid: { color: 'rgba(148, 163, 184, 0.1)' },
+                    ticks: { 
                         color: '#94a3b8',
                         callback: function(value) {
                             return 'R$ ' + (value / 1000).toFixed(0) + 'K';
@@ -183,68 +187,38 @@ function createHistoricoChart() {
                     }
                 },
                 x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        font: { weight: '600' }
-                    }
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8' }
                 }
             }
         }
     });
 }
 
-// GRÁFICO DE PAGAMENTOS
+// GRÁFICOS SIMPLES
 function createPagamentoChart() {
     const ctx = document.getElementById('pagamentoChart');
-    if (!ctx) {
-        console.log('❌ Canvas pagamentoChart não encontrado');
-        return;
-    }
+    if (!ctx) return;
+    if (pagamentoChart) pagamentoChart.destroy();
     
-    if (pagamentoChart) {
-        pagamentoChart.destroy();
-    }
-    
-    const chartCtx = ctx.getContext('2d');
-    
-    const pagamentosData = {
-        labels: ['PIX', 'Cartão Crédito', 'Boleto', 'Outros'],
-        datasets: [{
-            data: [40, 35, 20, 5],
-            backgroundColor: ['#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b'],
-            borderWidth: 2,
-            borderColor: '#1e293b'
-        }]
-    };
-    
-    pagamentoChart = new Chart(chartCtx, {
+    pagamentoChart = new Chart(ctx.getContext('2d'), {
         type: 'doughnut',
-        data: pagamentosData,
+        data: {
+            labels: ['PIX', 'Cartão Crédito', 'Boleto', 'Outros'],
+            datasets: [{
+                data: [40, 35, 20, 5],
+                backgroundColor: ['#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b'],
+                borderWidth: 2,
+                borderColor: '#1e293b'
+            }]
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
+            plugins: { 
+                legend: { 
                     position: 'bottom',
-                    labels: {
-                        color: '#e2e8f0',
-                        font: { size: 12 },
-                        padding: 15,
-                        usePointStyle: true
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#f1f5f9',
-                    bodyColor: '#cbd5e1',
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.label}: ${context.parsed}%`;
-                        }
-                    }
+                    labels: { color: '#e2e8f0' }
                 }
             },
             cutout: '65%'
@@ -252,121 +226,66 @@ function createPagamentoChart() {
     });
 }
 
-// GRÁFICO DE REGIÕES
 function createRegiaoChart() {
     const ctx = document.getElementById('regiaoChart');
-    if (!ctx) {
-        console.log('❌ Canvas regiaoChart não encontrado');
-        return;
-    }
+    if (!ctx) return;
+    if (regiaoChart) regiaoChart.destroy();
     
-    if (regiaoChart) {
-        regiaoChart.destroy();
-    }
-    
-    const chartCtx = ctx.getContext('2d');
-    
-    const regioesData = {
-        labels: ['Sudeste', 'Sul', 'Nordeste', 'Centro-Oeste', 'Norte'],
-        datasets: [{
-            label: 'Pedidos por Região',
-            data: [45, 25, 15, 10, 5],
-            backgroundColor: 'rgba(139, 92, 246, 0.8)',
-            borderColor: '#8b5cf6',
-            borderWidth: 2,
-            borderRadius: 8,
-            barThickness: 40
-        }]
-    };
-    
-    regiaoChart = new Chart(chartCtx, {
+    regiaoChart = new Chart(ctx.getContext('2d'), {
         type: 'bar',
-        data: regioesData,
+        data: {
+            labels: ['Sudeste', 'Sul', 'Nordeste', 'Centro-Oeste', 'Norte'],
+            datasets: [{
+                label: 'Pedidos',
+                data: [45, 25, 15, 10, 5],
+                backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                borderColor: '#8b5cf6',
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#f1f5f9',
-                    bodyColor: '#cbd5e1'
-                }
-            },
-            scales: {
-                y: {
+            plugins: { legend: { display: false } },
+            scales: { 
+                y: { 
                     beginAtZero: true,
-                    grid: {
-                        color: 'rgba(148, 163, 184, 0.1)'
-                    },
-                    ticks: {
-                        color: '#94a3b8'
-                    }
+                    grid: { color: 'rgba(148, 163, 184, 0.1)' },
+                    ticks: { color: '#94a3b8' }
                 },
                 x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#94a3b8'
-                    }
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8' }
                 }
             }
         }
     });
 }
 
-// GRÁFICO DE COMPRAS
 function createCompraChart() {
     const ctx = document.getElementById('compraChart');
-    if (!ctx) {
-        console.log('❌ Canvas compraChart não encontrado');
-        return;
-    }
+    if (!ctx) return;
+    if (compraChart) compraChart.destroy();
     
-    if (compraChart) {
-        compraChart.destroy();
-    }
-    
-    const chartCtx = ctx.getContext('2d');
-    
-    const compraData = {
-        labels: ['Primeira Compra', 'Recompra'],
-        datasets: [{
-            data: [35, 65],
-            backgroundColor: ['#22c55e', '#3b82f6'],
-            borderWidth: 2,
-            borderColor: '#1e293b'
-        }]
-    };
-    
-    compraChart = new Chart(chartCtx, {
+    compraChart = new Chart(ctx.getContext('2d'), {
         type: 'pie',
-        data: compraData,
+        data: {
+            labels: ['Primeira Compra', 'Recompra'],
+            datasets: [{
+                data: [35, 65],
+                backgroundColor: ['#22c55e', '#3b82f6'],
+                borderWidth: 2,
+                borderColor: '#1e293b'
+            }]
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
+            plugins: { 
+                legend: { 
                     position: 'bottom',
-                    labels: {
-                        color: '#e2e8f0',
-                        font: { size: 12 },
-                        padding: 15,
-                        usePointStyle: true
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#f1f5f9',
-                    bodyColor: '#cbd5e1',
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.label}: ${context.parsed}%`;
-                        }
-                    }
+                    labels: { color: '#e2e8f0' }
                 }
             }
         }
@@ -384,14 +303,14 @@ async function updateDashboard() {
         const filters = getCurrentFilters();
         const currentRow = findDataForFilters(filters);
         
-        // DADOS REAIS OU EXEMPLO
-        const kpis = currentRow ? {
-            metaMes: parseValue(currentRow[COLS.META_MES]) || 150000,
-            metaDia: parseValue(currentRow[COLS.META_DIARIA]) || 5000,
-            valorVendas: parseValue(currentRow[COLS.VALOR_PEDIDOS]) || 87500,
-            pedidosAtraso: 8, pedidosLiberar: 15, pedidosExpedidos: parseValue(currentRow[COLS.QTDE_PEDIDOS]) || 42
-        } : {
-            metaMes: 150000, metaDia: 5000, valorVendas: 87500, pedidosAtraso: 8, pedidosLiberar: 15, pedidosExpedidos: 42
+        // USAR METAS FIXAS (já que a planilha está vazia)
+        const kpis = {
+            metaMes: currentRow ? parseValue(currentRow[COLS.META_MES]) : 150000,
+            metaDia: currentRow ? parseValue(currentRow[COLS.META_DIA]) : 5000,
+            valorVendas: 87500,
+            pedidosAtraso: 8, 
+            pedidosLiberar: 15, 
+            pedidosExpedidos: 42
         };
 
         // ATUALIZAR KPIs
@@ -403,7 +322,7 @@ async function updateDashboard() {
         document.getElementById('pedidosExpedidos').textContent = formatNumber(kpis.pedidosExpedidos);
         document.getElementById('mesRef').textContent = filters.mesAno;
 
-        // FRANQUIAS
+        // FRANQUIAS (DADOS FIXOS)
         ['cs','kp','bc','pb','id','skd'].forEach(codigo => {
             document.getElementById(`${codigo}-qtd-orc`).textContent = '25';
             document.getElementById(`${codigo}-val-orc`).textContent = formatCurrency(25000);
@@ -414,26 +333,22 @@ async function updateDashboard() {
             document.getElementById(`${codigo}-conversao-bar`).style.width = '60%';
         });
 
-        // CRIAR TODOS OS GRÁFICOS
+        // CRIAR GRÁFICOS
         createHistoricoChart();
         createPagamentoChart();
         createRegiaoChart();
         createCompraChart();
 
-        console.log('✅ Dashboard completo atualizado!');
+        console.log('✅ Dashboard completo funcionando!');
         
     } catch (error) {
         console.error('❌ Erro:', error);
     } finally {
-        if (loading) {
-            setTimeout(() => {
-                loading.style.display = 'none';
-            }, 500);
-        }
+        if (loading) loading.style.display = 'none';
     }
 }
 
-// INICIAR TUDO
+// INICIAR
 function init() {
     console.log('🎯 Iniciando dashboard...');
     document.getElementById('filterAno').value = '2025';
@@ -447,5 +362,4 @@ function init() {
     }, 1000);
 }
 
-// INICIAR
 document.addEventListener('DOMContentLoaded', init);
