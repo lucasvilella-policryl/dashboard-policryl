@@ -1,645 +1,472 @@
-// DASHBOARD POLICRYL - VERSÃO COMPLETA CORRIGIDA
-console.log('🚀 Dashboard Policryl - Carregando todos os dados...');
-
-const CONFIG = {
-    SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
-    API_KEY: 'AIzaSyDBRuUuQZoLWaT4VSPuiPHGt0J4iviWR2g',
-    SHEET_NAME: 'BDADOS DASH',
-    RANGE: 'A:AR'
-};
-
-// MAPEAMENTO COMPLETO DAS COLUNAS (baseado nos cabeçalhos)
-const COLS = {
-    // Colunas básicas
-    ANO: 0,
-    MES: 1,
-    LINHA: 2,
-    
-    // Metas
-    META_MES: 3,
-    META_DIARIA: 4,
-    PORCENTAGEM_META: 5,
-    
-    // Orçamentos
-    QTDE_ORCAMENTOS: 6,
-    VALOR_ORCAMENTOS: 7,
-    TICKET_MEDIO_ORCAMENTOS: 8,
-    QTDE_ITENS_ORCAMENTOS: 9,
-    
-    // Simples Remessa
-    QTDE_SIMPLES_REMESSA: 10,
-    VALOR_SIMPLES_REMESSA: 11,
-    QTDE_ITENS_SIMPLES_REMESSA: 12,
-    
-    // Pedidos
-    QTDE_PEDIDOS: 13,
-    VALOR_PEDIDOS: 14,
-    TICKET_MEDIO_PEDIDOS: 15,
-    QTDE_ITENS_PEDIDOS: 16,
-    TAXA_CONVERSAO_PEDIDOS: 17,
-    TAXA_CONVERSAO_VALORES: 18,
-    
-    // Formas de Pagamento
-    PEDIDOS_PIX: 19,
-    VALORES_PIX: 20,
-    PEDIDOS_CARTAO_CREDITO: 21,
-    VALORES_CARTAO_CREDITO: 22,
-    PEDIDOS_BOLETO: 23,
-    VALORES_BOLETO: 24,
-    
-    // Status dos Pedidos
-    PEDIDOS_ATRASADOS: 25,
-    PEDIDOS_A_LIBERAR: 26,
-    PEDIDOS_FATURADOS_MES: 27,
-    PEDIDOS_EXPEDIDOS_MES: 28,
-    PEDIDOS_ENVIO_ATRASO: 29,
-    PEDIDOS_ENVIO_PRAZO: 30,
-    
-    // Comportamento de Compra
-    PRIMEIRA_COMPRA: 31,
-    RECOMPRA: 32,
-    TEMPO_MEDIO_TOTAL: 33,
-    
-    // Regiões
-    REGIAO_CENTRO_OESTE: 34,
-    REGIAO_NORDESTE: 35,
-    REGIAO_NORTE: 36,
-    REGIAO_SUDESTE: 37,
-    REGIAO_SUL: 38,
-    
-    // Tipo de Cliente
-    PEDIDOS_FRANQUIAS: 39,
-    PEDIDOS_MATRIZ: 40
-};
-
-const MESES = { 
-    'JAN':'01','FEV':'02','MAR':'03','ABR':'04','MAI':'05','JUN':'06',
-    'JUL':'07','AGO':'08','SET':'09','OUT':'10','NOV':'11','DEZ':'12' 
-};
-
-const MESES_NOME = { 
-    '01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun',
-    '07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez' 
-};
-
-let allData = [];
-let historicoChart, pagamentoChart, regiaoChart, compraChart;
-
-// FUNÇÕES BÁSICAS
-function formatCurrency(v) { 
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0); 
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-function formatNumber(v) { 
-    return new Intl.NumberFormat('pt-BR').format(v || 0); 
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0f0c29 0%, #1a1442 50%, #24183c 100%);
+    color: #ffffff;
+    padding: 20px;
+    min-height: 100vh;
 }
 
-function formatPercent(v) {
-    return (v || 0).toFixed(1) + '%';
+.container {
+    max-width: 1920px;
+    margin: 0 auto;
 }
 
-function parseValue(v) { 
-    if (!v || v === '') return 0;
-    if (typeof v === 'number') return v;
-    
-    // Para valores como "R$ 199.800,00"
-    if (typeof v === 'string' && v.includes('R$')) {
-        const cleaned = v.replace(/[R$\s.]/g, '').replace(',', '.');
-        return parseFloat(cleaned) || 0;
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    padding: 20px 30px;
+    border-radius: 15px;
+    border: 1px solid rgba(138, 92, 246, 0.3);
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo {
+    font-size: 48px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 900;
+}
+
+.title h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.title p {
+    font-size: 14px;
+    color: #a0aec0;
+    margin-top: 5px;
+}
+
+/* Filtros */
+.filters {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filter-group label {
+    font-size: 11px;
+    color: #a0aec0;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.filter-group select {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(138, 92, 246, 0.4);
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-width: 150px;
+}
+
+.filter-group select:hover {
+    border-color: #8b5cf6;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+}
+
+.filter-group select:focus {
+    outline: none;
+    border-color: #8b5cf6;
+}
+
+/* KPIs Grid */
+.kpis-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.kpi-card {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.kpi-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+}
+
+.kpi-card.primary {
+    border-color: rgba(139, 92, 246, 0.5);
+}
+.kpi-card.primary::before {
+    background: linear-gradient(90deg, #8b5cf6, #6366f1);
+}
+
+.kpi-card.danger {
+    border-color: rgba(239, 68, 68, 0.5);
+}
+.kpi-card.danger::before {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.kpi-card.warning {
+    border-color: rgba(249, 115, 22, 0.5);
+}
+.kpi-card.warning::before {
+    background: linear-gradient(90deg, #f97316, #ea580c);
+}
+
+.kpi-card.success {
+    border-color: rgba(34, 197, 94, 0.5);
+}
+.kpi-card.success::before {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.kpi-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #a0aec0;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.kpi-value {
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.kpi-subtitle {
+    font-size: 12px;
+    color: #64748b;
+}
+
+/* Gráficos Row */
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.chart-card {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    border: 1px solid rgba(138, 92, 246, 0.3);
+}
+
+.chart-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+}
+
+/* Franquias Grid */
+.franquias-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.franquia-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 25px;
+    border: 2px solid;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.franquia-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+}
+
+.franquia-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.franquia-card.cs {
+    border-color: rgba(139, 69, 19, 0.6);
+}
+
+.franquia-card.kp {
+    border-color: rgba(220, 20, 60, 0.6);
+}
+
+.franquia-card.kop {
+    border-color: rgba(220, 20, 60, 0.6);
+}
+
+.franquia-card.bc {
+    border-color: rgba(255, 107, 53, 0.6);
+}
+
+.franquia-card.pb {
+    border-color: rgba(255, 215, 0, 0.6);
+}
+
+.franquia-card.plb {
+    border-color: rgba(255, 215, 0, 0.6);
+}
+
+.franquia-card.id {
+    border-color: rgba(30, 144, 255, 0.6);
+}
+
+.franquia-card.ind {
+    border-color: rgba(30, 144, 255, 0.6);
+}
+
+.franquia-card.sk {
+    border-color: rgba(138, 43, 226, 0.6);
+}
+
+.franquia-card.skd {
+    border-color: rgba(138, 43, 226, 0.6);
+}
+
+.franquia-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.franquia-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.franquia-card.cs .franquia-icon { background: linear-gradient(135deg, #8b4513, #a0522d); }
+.franquia-card.kp .franquia-icon { background: linear-gradient(135deg, #dc143c, #ff1493); }
+.franquia-card.bc .franquia-icon { background: linear-gradient(135deg, #ff6b35, #ff8c42); }
+.franquia-card.pb .franquia-icon { background: linear-gradient(135deg, #ffd700, #ffed4e); }
+.franquia-card.id .franquia-icon { background: linear-gradient(135deg, #1e90ff, #4169e1); }
+
+.franquia-name {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.franquia-metrics {
+    display: grid;
+    gap: 12px;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.metric-label {
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.metric-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.metric-value.highlight {
+    font-size: 20px;
+    color: #22c55e;
+}
+
+.conversion-bar {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.conversion-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.conversion-track {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.conversion-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 1s ease-out;
+    box-shadow: 0 0 10px currentColor;
+}
+
+.franquia-card.cs .conversion-fill { background: linear-gradient(90deg, #8b4513, #cd853f); }
+.franquia-card.kp .conversion-fill { background: linear-gradient(90deg, #dc143c, #ff1493); }
+.franquia-card.bc .conversion-fill { background: linear-gradient(90deg, #ff6b35, #ffb347); }
+.franquia-card.pb .conversion-fill { background: linear-gradient(90deg, #ffd700, #ffed4e); }
+.franquia-card.id .conversion-fill { background: linear-gradient(90deg, #1e90ff, #87ceeb); }
+
+/* Histórico Chart Grande */
+.historico-section {
+    margin-bottom: 30px;
+}
+
+.historico-card {
+    background: rgba(30, 41, 59, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 30px;
+    border: 1px solid rgba(138, 92, 246, 0.3);
+}
+
+.historico-chart {
+    height: 400px;
+}
+
+/* Loading */
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 12, 41, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(139, 92, 246, 0.2);
+    border-top-color: #8b5cf6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-size: 18px;
+    color: #8b5cf6;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 1600px) {
+    .kpis-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
-    
-    // Para números simples
-    const cleaned = String(v).replace(/[^\d,.-]/g, '').replace(',', '.');
-    return parseFloat(cleaned) || 0;
-}
-
-function normalizarMes(m) { 
-    return MESES[String(m).trim().toUpperCase().substring(0,3)] || '01'; 
-}
-
-function getCurrentFilters() {
-    const ano = document.getElementById('filterAno').value;
-    const mes = document.getElementById('filterMes').value;
-    const linha = document.getElementById('filterLinha').value;
-    return { 
-        ano, 
-        mes, 
-        linha, 
-        mesAno: `${MESES_NOME[mes] || 'Out'}/${ano}` 
-    };
-}
-
-// CARREGAR DADOS
-async function fetchSheetData() {
-    try {
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data.values && data.values.length > 1) {
-            allData = data.values.slice(1);
-            console.log(`✅ ${allData.length} registros carregados`);
-            
-            // DEBUG: Mostrar estrutura dos dados
-            console.log('🔍 Estrutura dos primeiros registros:');
-            for (let i = 0; i < Math.min(3, allData.length); i++) {
-                console.log(`Registro ${i + 1}:`, {
-                    ano: allData[i][COLS.ANO],
-                    mes: allData[i][COLS.MES],
-                    linha: allData[i][COLS.LINHA],
-                    metaMes: allData[i][COLS.META_MES],
-                    valorOrcamentos: allData[i][COLS.VALOR_ORCAMENTOS],
-                    valorPedidos: allData[i][COLS.VALOR_PEDIDOS],
-                    colunasPreenchidas: allData[i].filter(cell => cell && cell !== '').length
-                });
-            }
-            
-            return true;
-        }
-    } catch (error) {
-        console.log('⚠️ Erro ao carregar dados:', error);
-    }
-    return false;
-}
-
-// BUSCAR DADOS PARA OS FILTROS
-function findDataForFilters(filters) {
-    const dadosFiltrados = allData.filter(row => {
-        const rowAno = String(row[COLS.ANO] || '').trim();
-        const rowMes = normalizarMes(row[COLS.MES]);
-        const rowLinha = String(row[COLS.LINHA] || '').trim();
-        
-        return rowAno === filters.ano && 
-               rowMes === filters.mes && 
-               (filters.linha === 'todas' || rowLinha === filters.linha);
-    });
-
-    console.log(`🔍 Encontrados ${dadosFiltrados.length} registros para ${filters.mesAno}, ${filters.linha}`);
-
-    if (dadosFiltrados.length === 0) return null;
-    if (dadosFiltrados.length === 1) return dadosFiltrados[0];
-
-    // Consolidar múltiplos registros
-    const consolidado = new Array(Object.keys(COLS).length).fill(0);
-    
-    dadosFiltrados.forEach(row => {
-        Object.values(COLS).forEach(colIndex => {
-            if (row[colIndex] !== undefined && row[colIndex] !== '') {
-                consolidado[colIndex] += parseValue(row[colIndex]);
-            }
-        });
-    });
-    
-    return consolidado;
-}
-
-// GRÁFICO DE HISTÓRICO - COM DADOS REAIS DE ORÇAMENTOS E VENDAS
-function createHistoricoChart() {
-    const ctx = document.getElementById('historicoChart');
-    if (!ctx) {
-        console.log('❌ Canvas historicoChart não encontrado');
-        return;
-    }
-    
-    if (historicoChart) historicoChart.destroy();
-    
-    console.log('🎯 Criando gráfico de histórico com dados reais...');
-    
-    // BUSCAR DADOS REAIS PARA O HISTÓRICO
-    const anoAtual = '2025';
-    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    
-    const dadosReais = meses.map((mesNome, index) => {
-        const mesNumero = String(index + 1).padStart(2, '0');
-        
-        // Buscar dados do mês
-        const dadosMes = allData.filter(row => {
-            const rowAno = String(row[COLS.ANO] || '').trim();
-            const rowMes = normalizarMes(row[COLS.MES]);
-            return rowAno === anoAtual && rowMes === mesNumero;
-        });
-        
-        // Calcular totais com dados reais
-        const metaMes = dadosMes.reduce((total, row) => total + parseValue(row[COLS.META_MES]), 0);
-        const valorOrcamentos = dadosMes.reduce((total, row) => total + parseValue(row[COLS.VALOR_ORCAMENTOS]), 0);
-        const valorVendas = dadosMes.reduce((total, row) => total + parseValue(row[COLS.VALOR_PEDIDOS]), 0);
-        
-        console.log(`📊 ${mesNome}/${anoAtual}: Orçamentos ${formatCurrency(valorOrcamentos)}, Vendas ${formatCurrency(valorVendas)}, Meta ${formatCurrency(metaMes)}`);
-        
-        return {
-            mes: mesNome,
-            orcamentos: valorOrcamentos, // DADOS REAIS DE ORÇAMENTOS
-            vendas: valorVendas, // DADOS REAIS DE VENDAS
-            meta: metaMes // DADOS REAIS DE META
-        };
-    });
-    
-    console.log('📈 Dados reais para histórico:', dadosReais);
-    
-    const historicoData = {
-        labels: meses,
-        datasets: [
-            {
-                label: 'Orçamentos',
-                data: dadosReais.map(d => d.orcamentos), // DADOS REAIS
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 5
-            },
-            {
-                label: 'Vendas',
-                data: dadosReais.map(d => d.vendas), // DADOS REAIS
-                borderColor: '#22c55e',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 5
-            },
-            {
-                label: 'Meta',
-                data: dadosReais.map(d => d.meta), // DADOS REAIS
-                borderColor: '#ef4444',
-                borderWidth: 2,
-                borderDash: [5, 5],
-                fill: false,
-                tension: 0.4,
-                pointRadius: 4
-            }
-        ]
-    };
-    
-    historicoChart = new Chart(ctx.getContext('2d'), {
-        type: 'line',
-        data: historicoData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { 
-                    position: 'top',
-                    labels: { 
-                        color: '#e2e8f0',
-                        font: { size: 13, weight: '600' },
-                        padding: 15,
-                        usePointStyle: true
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#f1f5f9',
-                    bodyColor: '#cbd5e1',
-                    borderColor: '#8b5cf6',
-                    borderWidth: 1,
-                    padding: 12,
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(148, 163, 184, 0.1)',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        font: { size: 11 },
-                        callback: function(value) {
-                            if (value === 0) return 'R$ 0';
-                            return 'R$ ' + (value / 1000).toFixed(0) + 'K';
-                        }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false,
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        font: { size: 11, weight: '600' }
-                    }
-                }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            }
-        }
-    });
-}
-
-// GRÁFICO DE PAGAMENTOS - COM DADOS REAIS
-function createPagamentoChart() {
-    const ctx = document.getElementById('pagamentoChart');
-    if (!ctx) return;
-    if (pagamentoChart) pagamentoChart.destroy();
-    
-    const filters = getCurrentFilters();
-    const currentRow = findDataForFilters(filters);
-    
-    // USAR DADOS REAIS DE PAGAMENTOS
-    const pagamentosData = {
-        labels: ['PIX', 'Cartão Crédito', 'Boleto'],
-        datasets: [{
-            data: [
-                currentRow ? parseValue(currentRow[COLS.VALORES_PIX]) : 0,
-                currentRow ? parseValue(currentRow[COLS.VALORES_CARTAO_CREDITO]) : 0,
-                currentRow ? parseValue(currentRow[COLS.VALORES_BOLETO]) : 0
-            ],
-            backgroundColor: ['#22c55e', '#3b82f6', '#8b5cf6'],
-            borderWidth: 2,
-            borderColor: '#1e293b'
-        }]
-    };
-    
-    pagamentoChart = new Chart(ctx.getContext('2d'), {
-        type: 'doughnut',
-        data: pagamentosData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { 
-                legend: { 
-                    position: 'bottom',
-                    labels: { color: '#e2e8f0' }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.label}: ${formatCurrency(context.parsed)}`;
-                        }
-                    }
-                }
-            },
-            cutout: '65%'
-        }
-    });
-}
-
-// GRÁFICO DE REGIÕES - COM DADOS REAIS
-function createRegiaoChart() {
-    const ctx = document.getElementById('regiaoChart');
-    if (!ctx) return;
-    if (regiaoChart) regiaoChart.destroy();
-    
-    const filters = getCurrentFilters();
-    const currentRow = findDataForFilters(filters);
-    
-    const regioesData = {
-        labels: ['Centro-Oeste', 'Nordeste', 'Norte', 'Sudeste', 'Sul'],
-        datasets: [{
-            label: 'Pedidos por Região',
-            data: [
-                currentRow ? parseValue(currentRow[COLS.REGIAO_CENTRO_OESTE]) : 0,
-                currentRow ? parseValue(currentRow[COLS.REGIAO_NORDESTE]) : 0,
-                currentRow ? parseValue(currentRow[COLS.REGIAO_NORTE]) : 0,
-                currentRow ? parseValue(currentRow[COLS.REGIAO_SUDESTE]) : 0,
-                currentRow ? parseValue(currentRow[COLS.REGIAO_SUL]) : 0
-            ],
-            backgroundColor: 'rgba(139, 92, 246, 0.8)',
-            borderColor: '#8b5cf6',
-            borderWidth: 2,
-            borderRadius: 8
-        }]
-    };
-    
-    regiaoChart = new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: regioesData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { 
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `Pedidos: ${formatNumber(context.parsed.y)}`;
-                        }
-                    }
-                }
-            },
-            scales: { 
-                y: { 
-                    beginAtZero: true,
-                    grid: { color: 'rgba(148, 163, 184, 0.1)' },
-                    ticks: { 
-                        color: '#94a3b8',
-                        callback: function(value) {
-                            return formatNumber(value);
-                        }
-                    }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#94a3b8' }
-                }
-            }
-        }
-    });
-}
-
-// GRÁFICO DE COMPRAS - COM DADOS REAIS
-function createCompraChart() {
-    const ctx = document.getElementById('compraChart');
-    if (!ctx) return;
-    if (compraChart) compraChart.destroy();
-    
-    const filters = getCurrentFilters();
-    const currentRow = findDataForFilters(filters);
-    
-    const compraData = {
-        labels: ['Primeira Compra', 'Recompra'],
-        datasets: [{
-            data: [
-                currentRow ? parseValue(currentRow[COLS.PRIMEIRA_COMPRA]) : 0,
-                currentRow ? parseValue(currentRow[COLS.RECOMPRA]) : 0
-            ],
-            backgroundColor: ['#22c55e', '#3b82f6'],
-            borderWidth: 2,
-            borderColor: '#1e293b'
-        }]
-    };
-    
-    compraChart = new Chart(ctx.getContext('2d'), {
-        type: 'pie',
-        data: compraData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { 
-                legend: { 
-                    position: 'bottom',
-                    labels: { color: '#e2e8f0' }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `${context.label}: ${formatNumber(context.parsed)} pedidos`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-// ATUALIZAR TUDO - COM TODOS OS DADOS REAIS
-async function updateDashboard() {
-    console.log('🔄 Atualizando dashboard com todos os dados reais...');
-    
-    const loading = document.getElementById('loading');
-    if (loading) loading.style.display = 'flex';
-    
-    try {
-        const filters = getCurrentFilters();
-        const currentRow = findDataForFilters(filters);
-        
-        // USAR DADOS REAIS PARA TODOS OS KPIs
-        const kpis = {
-            metaMes: currentRow ? parseValue(currentRow[COLS.META_MES]) : 0,
-            metaDia: currentRow ? parseValue(currentRow[COLS.META_DIARIA]) : 0,
-            valorVendas: currentRow ? parseValue(currentRow[COLS.VALOR_PEDIDOS]) : 0,
-            pedidosAtraso: currentRow ? parseValue(currentRow[COLS.PEDIDOS_ATRASADOS]) : 0,
-            pedidosLiberar: currentRow ? parseValue(currentRow[COLS.PEDIDOS_A_LIBERAR]) : 0,
-            pedidosExpedidos: currentRow ? parseValue(currentRow[COLS.PEDIDOS_EXPEDIDOS_MES]) : 0
-        };
-
-        // ATUALIZAR KPIs
-        document.getElementById('metaMes').textContent = formatCurrency(kpis.metaMes);
-        document.getElementById('metaDia').textContent = formatCurrency(kpis.metaDia);
-        document.getElementById('valorVendas').textContent = formatCurrency(kpis.valorVendas);
-        document.getElementById('pedidosAtraso').textContent = formatNumber(kpis.pedidosAtraso);
-        document.getElementById('pedidosLiberar').textContent = formatNumber(kpis.pedidosLiberar);
-        document.getElementById('pedidosExpedidos').textContent = formatNumber(kpis.pedidosExpedidos);
-        document.getElementById('mesRef').textContent = filters.mesAno;
-
-        // FRANQUIAS COM DADOS REAIS
-        const franquias = [
-            { codigo: 'cs', nome: 'FRA - Cacau Show' },
-            { codigo: 'kp', nome: 'FRA - Kopenhagen' },
-            { codigo: 'bc', nome: 'FRA - Brasil Cacau' },
-            { codigo: 'pb', nome: 'PLB - PolyBee' },
-            { codigo: 'id', nome: 'IND - Industries' },
-            { codigo: 'skd', nome: 'SKD - Skullderia' }
-        ];
-        
-        franquias.forEach(franq => {
-            const dadosFranquia = allData.filter(row => {
-                const rowAno = String(row[COLS.ANO] || '').trim();
-                const rowMes = normalizarMes(row[COLS.MES]);
-                const rowLinha = String(row[COLS.LINHA] || '').trim();
-                
-                return rowAno === filters.ano && 
-                       rowMes === filters.mes && 
-                       rowLinha === franq.nome;
-            });
-            
-            if (dadosFranquia.length > 0) {
-                const franqData = dadosFranquia[0];
-                const qtdOrc = parseValue(franqData[COLS.QTDE_ORCAMENTOS]);
-                const valOrc = parseValue(franqData[COLS.VALOR_ORCAMENTOS]);
-                const qtdPed = parseValue(franqData[COLS.QTDE_PEDIDOS]);
-                const valPed = parseValue(franqData[COLS.VALOR_PEDIDOS]);
-                const ticket = qtdPed > 0 ? valPed / qtdPed : 0;
-                const conversao = qtdOrc > 0 ? (qtdPed / qtdOrc) * 100 : 0;
-                
-                document.getElementById(`${franq.codigo}-qtd-orc`).textContent = formatNumber(qtdOrc);
-                document.getElementById(`${franq.codigo}-val-orc`).textContent = formatCurrency(valOrc);
-                document.getElementById(`${franq.codigo}-qtd-ped`).textContent = formatNumber(qtdPed);
-                document.getElementById(`${franq.codigo}-val-ped`).textContent = formatCurrency(valPed);
-                document.getElementById(`${franq.codigo}-ticket`).textContent = formatCurrency(ticket);
-                document.getElementById(`${franq.codigo}-conversao`).textContent = formatPercent(conversao);
-                document.getElementById(`${franq.codigo}-conversao-bar`).style.width = Math.min(conversao, 100) + '%';
-            } else {
-                // Se não encontrou dados, zerar
-                document.getElementById(`${franq.codigo}-qtd-orc`).textContent = '0';
-                document.getElementById(`${franq.codigo}-val-orc`).textContent = formatCurrency(0);
-                document.getElementById(`${franq.codigo}-qtd-ped`).textContent = '0';
-                document.getElementById(`${franq.codigo}-val-ped`).textContent = formatCurrency(0);
-                document.getElementById(`${franq.codigo}-ticket`).textContent = formatCurrency(0);
-                document.getElementById(`${franq.codigo}-conversao`).textContent = '0%';
-                document.getElementById(`${franq.codigo}-conversao-bar`).style.width = '0%';
-            }
-        });
-
-        // CRIAR TODOS OS GRÁFICOS COM DADOS REAIS
-        createHistoricoChart();
-        createPagamentoChart();
-        createRegiaoChart();
-        createCompraChart();
-
-        console.log('✅ Dashboard atualizado com TODOS os dados reais!');
-        
-    } catch (error) {
-        console.error('❌ Erro:', error);
-    } finally {
-        if (loading) {
-            setTimeout(() => {
-                loading.style.display = 'none';
-            }, 500);
-        }
+    .franquias-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
-// INICIALIZAÇÃO
-function init() {
-    console.log('🎯 Inicializando dashboard Policryl...');
-    
-    // CONFIGURAR 2025 COMO PADRÃO
-    document.getElementById('filterAno').value = '2025';
-    document.getElementById('filterMes').value = '10';
-    
-    // EVENTOS
-    ['filterAno', 'filterMes', 'filterLinha'].forEach(id => {
-        document.getElementById(id).addEventListener('change', updateDashboard);
-    });
-    
-    // CARREGAR DADOS E INICIAR
-    setTimeout(async () => { 
-        await fetchSheetData(); 
-        updateDashboard(); 
-    }, 1000);
+@media (max-width: 1200px) {
+    .kpis-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .franquias-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
 }
 
-// AUTO-REFRESH A CADA 2 MINUTOS
-function startAutoRefresh() {
-    console.log('🔄 Iniciando auto-refresh (2 minutos)...');
-    
-    setInterval(() => {
-        console.log('🔄 Auto-refresh: recarregando dados...');
-        
-        // Forçar recarregamento dos dados
-        allData = [];
-        
-        // Atualizar o dashboard
-        updateDashboard();
-        
-    }, 2 * 60 * 1000); // 2 minutos em milissegundos
+@media (max-width: 768px) {
+    .kpis-grid,
+    .franquias-grid {
+        grid-template-columns: 1fr;
+    }
+    .header {
+        flex-direction: column;
+        gap: 20px;
+    }
+    .filters {
+        flex-wrap: wrap;
+    }
+    .kpi-value {
+        font-size: 28px;
+    }
 }
-
-// E modifique a função init() para iniciar o auto-refresh:
-function init() {
-    console.log('🎯 Inicializando dashboard Policryl...');
-    
-    // CONFIGURAR 2025 COMO PADRÃO
-    document.getElementById('filterAno').value = '2025';
-    document.getElementById('filterMes').value = '10';
-    
-    // EVENTOS
-    ['filterAno','filterMes','filterLinha'].forEach(id => {
-        document.getElementById(id).addEventListener('change', updateDashboard);
-    });
-
-// INICIAR QUANDO A PÁGINA CARREGAR
-document.addEventListener('DOMContentLoaded', init);
-
-console.log('🔧 Dashboard Policryl - Script completo carregado');
