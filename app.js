@@ -270,18 +270,26 @@ function calculateFranquiaData(data, filters, franquiaNome) {
     };
 }
 
-function calculateHistoricoAnual(data, ano){
-  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  return meses.map((mesNome, idx) => {
-    const mesAno = mesNome + '/' + ano;
-    const rows = data.filter(r => r && (r[COLS.MES]||'') === mesAno);
-    const orcamentos = rows.filter(r => !r[COLS.EXPEDIDO_EM]).reduce((s,r)=> s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
-    const vendas = rows.filter(r =>  r[COLS.EXPEDIDO_EM]).reduce((s,r)=> s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
-    const mm = String(idx+1).padStart(2,'0');
-    const metasMes = METAS_CACHE.filter(m => m.ano===String(ano) && m.mes===mm);
-    const meta = metasMes.reduce((s,m)=> s + (m.metaMes||0), 0);
-    return { mes: mesNome, orcamentos, vendas, meta };
-  });
+// CORRIJA esta função no app.js (linhas ~260-280)
+function calculateHistoricoAnual(data, ano) {
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    return meses.map((mesNome, idx) => {
+        const mesAno = mesNome + '/' + ano;
+        const rows = data.filter(r => (r[COLS.MES] || '') === mesAno);
+        
+        const orcamentos = rows.filter(r => !r[COLS.EXPEDIDO_EM])
+            .reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
+        
+        const vendas = rows.filter(r => r[COLS.EXPEDIDO_EM])
+            .reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
+        
+        const mm = String(idx + 1).padStart(2, '0');
+        const metasMes = METAS_CACHE.filter(m => m.ano === String(ano) && m.mes === mm);
+        const meta = metasMes.reduce((s, m) => s + (m.metaMes || 0), 0);
+        
+        return { mes: mesNome, orcamentos, vendas, meta };
+    });
 }
 
 function calculatePagamentos(data, filters) {
