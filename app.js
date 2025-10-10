@@ -1,3 +1,23 @@
+async function debugSheetData() {
+    try {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
+        console.log('🔗 URL:', url);
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log('📊 Dados brutos:', data);
+        
+        if (data.values) {
+            console.log('✅ Cabeçalhos:', data.values[0]);
+            console.log('✅ Primeira linha:', data.values[1]);
+        }
+    } catch (error) {
+        console.error('❌ Erro no debug:', error);
+    }
+}
+
+// Chame esta função no updateDashboard()
+
 // === [INJECTED] Utils & Metas (GVIZ) =========================================
 const PT3_TO_MM = {
   'JAN':'01','FEV':'02','MAR':'03','ABR':'04','MAI':'05','JUN':'06',
