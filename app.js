@@ -638,15 +638,6 @@ function init() {
     ['filterAno','filterMes','filterLinha'].forEach(id => {
         document.getElementById(id).addEventListener('change', updateDashboard);
     });
-    
-    // CARREGAR DADOS E INICIAR
-    setTimeout(async () => { 
-        await fetchSheetData(); 
-        updateDashboard();
-        
-        // INICIAR AUTO-REFRESH APÓS PRIMEIRA CARGA
-        startAutoRefresh();
-    }, 1000);
 
 // INICIAR QUANDO A PÁGINA CARREGAR
 document.addEventListener('DOMContentLoaded', init);
