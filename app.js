@@ -1,4 +1,3 @@
-
 // === [INJECTED] Utils & Metas (GVIZ) =========================================
 const PT3_TO_MM = {
   'JAN':'01','FEV':'02','MAR':'03','ABR':'04','MAI':'05','JUN':'06',
@@ -22,7 +21,7 @@ let METAS_CACHE = []; // cache em memória
 
 async function fetchMetas(){
   const sheetId = (typeof CONFIG !== 'undefined' && CONFIG.SHEET_ID) ? CONFIG.SHEET_ID : '%SHEET_ID%';
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('BDADOS METAS')}&range=A:E`;
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('BDADOS METAS' )}&range=A:E`;
   const res = await fetch(url);
   if(!res.ok) throw new Error('Erro METAS: HTTP ' + res.status);
   const txt = await res.text();
@@ -64,9 +63,9 @@ function resolveMetasFor(filters){
 // Configuração do Google Sheets
 const CONFIG = {
     SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
-    API_KEY: 'AIzaSyDBRuUuQZoLWaT4VSPuiPHGt0J4iviWR2g',
+    // API_KEY não é mais necessária com a abordagem GVIZ
     SHEET_NAME: 'PEDIDOS GERAL',
-    RANGE: 'A:AE' // Todas as colunas até AE
+    RANGE: 'A:AE'
 };
 
 // Mapeamento de colunas (baseado na sua planilha)
@@ -109,8 +108,6 @@ let allData = [];
 let HEADERS = [];
 let historicoChart, pagamentoChart, regiaoChart, distribuicaoChart;
 
-// Metas (ajuste conforme necessário)
-
 // Dinâmico: encontrar índice de coluna pelo título do cabeçalho
 function getColIndexByTitle(name){
     if (!HEADERS || HEADERS.length === 0) return -1;
@@ -139,7 +136,6 @@ function parseValue(value) {
     if (!value) return 0;
     if (typeof value === 'number') return value;
     
-    // Remove R$, pontos e substitui vírgula por ponto
     const cleaned = value.toString().replace(/[R$\s.]/g, '').replace(',', '.');
     return parseFloat(cleaned) || 0;
 }
@@ -163,30 +159,45 @@ function getCurrentFilters() {
     };
 }
 
-// ==================== BUSCAR DADOS DO SHEETS ====================
+// ==================== BUSCAR DADOS DO SHEETS (MODIFICADO) ====================
 
 async function fetchSheetData() {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
+    const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME )}&range=${CONFIG.RANGE}`;
     
     try {
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
         
-        if (!data.values || data.values.length === 0) {
+        const text = await response.text();
+        // Extrai o JSON de uma resposta JSONP
+        const jsonString = text.substring(text.indexOf('(') + 1, text.lastIndexOf(')'));
+        const data = JSON.parse(jsonString);
+
+        if (!data.table || !data.table.rows || data.table.rows.length === 0) {
             throw new Error('Nenhum dado encontrado na planilha');
         }
+
+        // Extrai os cabeçalhos das colunas
+        HEADERS = data.table.cols.map(col => col.label || '');
         
-        // Remove cabeçalho e armazena dados
-        HEADERS = data.values[0] || [];
-        allData = data.values.slice(1);
-        console.log(`✅ ${allData.length} registros carregados`);
+        // Converte as linhas para o formato de array que o resto do código espera
+        allData = data.table.rows.map(row => {
+            // Garante que a linha e a célula existam antes de mapear
+            if (!row || !row.c) return []; 
+            return row.c.map(cell => (cell ? cell.v : null));
+        });
+
+        console.log(`✅ ${allData.length} registros carregados via GVIZ`);
         
         return allData;
     } catch (error) {
-        console.error('❌ Erro ao buscar dados:', error);
+        console.error('❌ Erro ao buscar dados via GVIZ:', error);
+        // Tenta extrair uma mensagem de erro mais clara da resposta
+        if (error.message.includes('JSON')) {
+             console.error("A resposta da planilha pode não ser um JSON válido ou está mal formatada.");
+        }
         throw error;
     }
 }
@@ -195,11 +206,10 @@ async function fetchSheetData() {
 
 function filterData(data, filters) {
     return data.filter(row => {
-        // Filtro de mês/ano
+        if (!row || row.length === 0) return false; // Adiciona verificação para linhas nulas ou vazias
         const mesRow = row[COLS.MES] || '';
         if (mesRow !== filters.mesAno) return false;
         
-        // Filtro de linha
         if (filters.linha !== 'todas') {
             const linhaRow = row[COLS.LINHA] || '';
             if (!linhaRow.includes(filters.linha)) return false;
@@ -225,19 +235,16 @@ function calculateKPIs(data, filters){
     valorVendas, pedidosAtraso, pedidosLiberar, pedidosExpedidos: pedidosExped
   };
 }
-/* removed stale block */
-/* removed legacy KPIs block that referenced METAS.mensal */
-
 
 function calculateFranquiaData(data, filters, franquiaNome) {
     const filtered = data.filter(row => {
+        if (!row || row.length === 0) return false;
         const mesRow = row[COLS.MES] || '';
         const linhaRow = row[COLS.LINHA] || '';
         
         return mesRow === filters.mesAno && linhaRow.includes(franquiaNome);
     });
     
-    // Orçamentos (considerar tipo Enxoval ou status específico)
     const orcamentos = filtered.filter(row => {
         const tipo = row[COLS.ENXOVAL_REPOS] || '';
         return tipo.includes('Enxoval') || !row[COLS.EXPEDIDO_EM];
@@ -246,7 +253,6 @@ function calculateFranquiaData(data, filters, franquiaNome) {
     const qtdOrc = orcamentos.length;
     const valOrc = orcamentos.reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO]), 0);
     
-    // Pedidos (expedidos)
     const pedidos = filtered.filter(row => row[COLS.EXPEDIDO_EM]);
     const qtdPed = pedidos.length;
     const valPed = pedidos.reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO]), 0);
@@ -264,13 +270,11 @@ function calculateFranquiaData(data, filters, franquiaNome) {
     };
 }
 
-
-
 function calculateHistoricoAnual(data, ano){
   const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   return meses.map((mesNome, idx) => {
     const mesAno = mesNome + '/' + ano;
-    const rows = data.filter(r => (r[COLS.MES]||'') === mesAno);
+    const rows = data.filter(r => r && (r[COLS.MES]||'') === mesAno);
     const orcamentos = rows.filter(r => !r[COLS.EXPEDIDO_EM]).reduce((s,r)=> s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
     const vendas = rows.filter(r =>  r[COLS.EXPEDIDO_EM]).reduce((s,r)=> s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
     const mm = String(idx+1).padStart(2,'0');
@@ -279,31 +283,13 @@ function calculateHistoricoAnual(data, ano){
     return { mes: mesNome, orcamentos, vendas, meta };
   });
 }
-;
-  });
-}
-/${ano}`;
-        const filtered = data.filter(row => row[COLS.MES] === mesAno);
-        
-        const orcamentos = filtered.reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO]), 0);
-        const vendas = filtered
-            .filter(row => row[COLS.EXPEDIDO_EM])
-            .reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO]), 0);
-        
-        return {
-            mes,
-            orcamentos,
-            vendas,
-            meta: METAS.mensal
-        };
-    });
-}
 
 function calculatePagamentos(data, filters) {
     const filtered = filterData(data, filters);
     const pagamentos = {};
     
     filtered.forEach(row => {
+        if (!row) return;
         const forma = row[COLS.FORMA_PGTO] || 'Não informado';
         pagamentos[forma] = (pagamentos[forma] || 0) + 1;
     });
@@ -321,6 +307,7 @@ function calculateRegioes(data, filters) {
     const regioes = {};
     
     filtered.forEach(row => {
+        if (!row) return;
         const regiao = row[COLS.REGIAO] || 'Não informado';
         regioes[regiao] = (regioes[regiao] || 0) + 1;
     });
@@ -623,7 +610,6 @@ function createRegiaoChart(data, filters) {
 
 
 function createCompraChart(data, filters){
-    // tenta localizar coluna "Compra" no cabeçalho
     const colCompra = getColIndexByTitle('Compra');
     const canvas = document.getElementById('compraChart') || document.getElementById('distribuicaoChart');
     if (!canvas){
@@ -637,6 +623,7 @@ function createCompraChart(data, filters){
 
     if (colCompra >= 0){
         f.forEach(r => {
+            if (!r) return;
             const v = (r[colCompra] || '').toString().toLowerCase();
             if (v.includes('primeira')) counts['Primeira compra']++;
             else if (v.includes('recompra')) counts['Recompra']++;
@@ -682,23 +669,17 @@ async function updateDashboard() {
     loading.style.display = 'flex';
 
     try {
-        // Buscar dados se ainda não foram carregados
-        if (allData.length === 0) {
-            await fetchSheetData();
-    if(METAS_CACHE.length===0) await fetchMetas();
-        }
+        // Busca os dados das duas planilhas
+        await Promise.all([fetchSheetData(), fetchMetas()]);
         
         const filters = getCurrentFilters();
         console.log('📊 Filtros aplicados:', filters);
         
-        // Calcular e atualizar KPIs
         const kpis = calculateKPIs(allData, filters);
         updateKPIs(kpis, filters);
         
-        // Atualizar franquias
         updateAllFranquias(allData, filters);
         
-        // Criar gráficos
         createHistoricoChart(allData, filters.ano);
         createPagamentoChart(allData, filters);
         createRegiaoChart(allData, filters);
@@ -728,15 +709,12 @@ function setCurrentDate() {
 }
 
 function startAutoRefresh() {
-    // Auto-refresh a cada 5 minutos
     setInterval(() => {
         console.log('🔄 Auto-refresh: recarregando dados...');
-        allData = []; // Limpa cache para forçar reload
         updateDashboard();
     }, 300000); // 5 minutos
 }
 
-// Inicializar quando a página carregar
 window.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Inicializando Dashboard Policryl...');
     setCurrentDate();
