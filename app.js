@@ -165,8 +165,32 @@ function getCurrentFilters() {
 
 // ==================== BUSCAR DADOS DO SHEETS ====================
 
-async function fetchSheetData() {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
+
+async function fetchSheetData(){
+  const id = CONFIG.SHEET_ID;
+  const sheet = encodeURIComponent(CONFIG.SHEET_NAME);
+  const range = CONFIG.RANGE || 'A:AO';
+  const url = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json&sheet=${sheet}&range=${range}`;
+
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('HTTP ' + res.status + ' ao buscar dados principais');
+  const txt = await res.text();
+  const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
+
+  // Cabeçalhos vêm em json.table.cols[*].label
+  HEADERS = (json.table.cols || []).map(c => (c && c.label) ? c.label : '');
+
+  const cols = json.table.cols.length;
+  const rows = json.table.rows || [];
+
+  allData = rows.map(r => {
+    const arr = new Array(cols).fill('');
+    (r.c || []).forEach((cell, i) => { arr[i] = cell ? (cell.v ?? '') : ''; });
+    return arr;
+  });
+  return allData;
+}
+/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
     
     try {
         const response = await fetch(url);
