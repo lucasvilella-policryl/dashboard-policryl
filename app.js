@@ -270,7 +270,6 @@ function calculateFranquiaData(data, filters, franquiaNome) {
     };
 }
 
-// CORRIJA esta função no app.js (linhas ~260-280)
 function calculateHistoricoAnual(data, ano) {
     const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     
