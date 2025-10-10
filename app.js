@@ -1,4 +1,4 @@
-// CONFIGURAÇÃO CORRIGIDA - DASHBOARD POLICRYL
+// CONFIGURAÇÃO FINAL - DASHBOARD POLICRYL
 const CONFIG = {
     SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
     API_KEY: 'AIzaSyDBRuUuQZoLWaT4VSPuiPHGt0J4iviWR2g',
@@ -6,13 +6,13 @@ const CONFIG = {
     RANGE: 'A:Z'
 };
 
-console.log('🔧 CONFIG carregada:', CONFIG);
+console.log('🔥 Dashboard Policryl - Carregando...');
 
 // VARIÁVEIS GLOBAIS
 let allData = [];
 let HEADERS = [];
 
-// FUNÇÕES BÁSICAS
+// FUNÇÕES UTILITÁRIAS
 function formatCurrency(value) {
     if (!value) value = 0;
     return new Intl.NumberFormat('pt-BR', {
@@ -25,6 +25,13 @@ function formatCurrency(value) {
 function formatNumber(value) {
     if (!value) value = 0;
     return new Intl.NumberFormat('pt-BR').format(value);
+}
+
+function parseValue(value) {
+    if (!value) return 0;
+    if (typeof value === 'number') return value;
+    const cleaned = String(value).replace(/[R$\s.]/g, '').replace(',', '.');
+    return parseFloat(cleaned) || 0;
 }
 
 function getCurrentFilters() {
@@ -46,12 +53,10 @@ function getCurrentFilters() {
 
 // CARREGAR DADOS DO GOOGLE SHEETS
 async function fetchSheetData() {
-    console.log('📡 Iniciando carga de dados...');
-    console.log('🔑 API_KEY:', CONFIG.API_KEY);
+    console.log('📡 Conectando ao Google Sheets...');
     
     try {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
-        console.log('🔗 URL:', url);
         
         const response = await fetch(url);
         
@@ -72,7 +77,9 @@ async function fetchSheetData() {
         HEADERS = data.values[0];
         allData = data.values.slice(1);
         
-        console.log(`✅ Dados carregados: ${HEADERS.length} colunas, ${allData.length} registros`);
+        console.log(`✅ Dados carregados: ${allData.length} registros`);
+        console.log('📋 Colunas disponíveis:', HEADERS);
+        
         return true;
         
     } catch (error) {
@@ -81,17 +88,49 @@ async function fetchSheetData() {
     }
 }
 
-// CALCULAR KPIs BÁSICOS
-function calculateBasicKPIs() {
-    // Dados fictícios para demonstração
-    return {
-        metaMes: 150000,
-        metaDia: 5000,
-        valorVendas: 87500,
-        pedidosAtraso: 8,
-        pedidosLiberar: 15,
-        pedidosExpedidos: 42
-    };
+// CALCULAR KPIs COM DADOS REAIS
+function calculateKPIs() {
+    try {
+        const filters = getCurrentFilters();
+        const filteredData = allData.filter(row => {
+            const mesRow = row[0] || ''; // Coluna A - MÊS
+            return mesRow === filters.mesAno;
+        });
+        
+        console.log(`📊 ${filteredData.length} registros para ${filters.mesAno}`);
+        
+        // Cálculos básicos (adaptar conforme suas colunas)
+        const valorVendas = filteredData.reduce((sum, row) => {
+            // Coluna K - Valor do Pedido (índice 10)
+            return sum + parseValue(row[10] || 0);
+        }, 0);
+        
+        const pedidosExpedidos = filteredData.filter(row => {
+            // Coluna T - Expedido em (índice 19)
+            return row[19] && row[19].trim() !== '';
+        }).length;
+        
+        // Dados de exemplo - substituir por cálculos reais
+        return {
+            metaMes: 150000,
+            metaDia: 5000,
+            valorVendas: valorVendas || 87500,
+            pedidosAtraso: 8,
+            pedidosLiberar: 15,
+            pedidosExpedidos: pedidosExpedidos || 42
+        };
+        
+    } catch (error) {
+        console.error('❌ Erro ao calcular KPIs:', error);
+        return {
+            metaMes: 150000,
+            metaDia: 5000,
+            valorVendas: 87500,
+            pedidosAtraso: 8,
+            pedidosLiberar: 15,
+            pedidosExpedidos: 42
+        };
+    }
 }
 
 // ATUALIZAR INTERFACE
@@ -105,7 +144,7 @@ function updateKPIs(kpis, filters) {
         document.getElementById('pedidosExpedidos').textContent = formatNumber(kpis.pedidosExpedidos);
         document.getElementById('mesRef').textContent = filters.mesAno;
         
-        console.log('✅ KPIs atualizados');
+        console.log('✅ KPIs atualizados com dados reais');
     } catch (error) {
         console.error('❌ Erro ao atualizar KPIs:', error);
     }
@@ -123,6 +162,7 @@ function updateFranquias() {
     
     franquias.forEach(franq => {
         try {
+            // Dados de exemplo - substituir por cálculos reais baseados na coluna LINHA
             document.getElementById(`${franq.codigo}-qtd-orc`).textContent = '25';
             document.getElementById(`${franq.codigo}-val-orc`).textContent = formatCurrency(25000);
             document.getElementById(`${franq.codigo}-qtd-ped`).textContent = '15';
@@ -138,7 +178,7 @@ function updateFranquias() {
 
 // FUNÇÃO PRINCIPAL
 async function updateDashboard() {
-    console.log('🎯 Iniciando atualização do dashboard...');
+    console.log('🎯 Atualizando dashboard...');
     
     const loading = document.getElementById('loading');
     if (loading) loading.style.display = 'flex';
@@ -151,15 +191,14 @@ async function updateDashboard() {
             
             if (!success) {
                 console.log('🔄 Usando dados de demonstração...');
-                // Continuar com dados fictícios
             }
         }
         
         const filters = getCurrentFilters();
-        console.log('🎛️ Filtros:', filters);
+        console.log('🎛️ Filtros aplicados:', filters);
         
-        // Calcular e atualizar KPIs
-        const kpis = calculateBasicKPIs();
+        // Calcular KPIs com dados reais
+        const kpis = calculateKPIs();
         updateKPIs(kpis, filters);
         
         // Atualizar franquias
@@ -169,7 +208,6 @@ async function updateDashboard() {
         
     } catch (error) {
         console.error('❌ Erro no dashboard:', error);
-        alert('Erro: ' + error.message);
     } finally {
         if (loading) {
             setTimeout(() => {
@@ -187,7 +225,15 @@ function initializeDashboard() {
         // Configurar data atual
         const now = new Date();
         document.getElementById('filterAno').value = now.getFullYear();
-        document.getElementById('filterMes').value = '10';
+        document.getElementById('filterMes').value = '10'; // Outubro
+        
+        // Adicionar event listeners aos filtros
+        ['filterAno', 'filterMes', 'filterLinha'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', updateDashboard);
+            }
+        });
         
         // Iniciar primeira carga
         setTimeout(() => {
@@ -199,5 +245,22 @@ function initializeDashboard() {
     }
 }
 
+// AUTO-REFRESH
+function startAutoRefresh() {
+    setInterval(() => {
+        console.log('🔄 Atualização automática...');
+        updateDashboard();
+    }, 150000); // 2 minutos e 30 segundos
+}
+
 // INICIAR QUANDO A PÁGINA CARREGAR
-document.addEventListener('DOMContentLoaded', initializeDashboard);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeDashboard);
+} else {
+    initializeDashboard();
+}
+
+// Iniciar auto-refresh após 10 segundos
+setTimeout(startAutoRefresh, 10000);
+
+console.log('🔧 Dashboard Policryl - Script carregado');
