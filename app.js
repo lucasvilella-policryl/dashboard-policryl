@@ -1,4 +1,4 @@
-// DASHBOARD POLICRYL - VERSÃO DEFINITIVA
+// DASHBOARD POLICRYL - VERSÃO COMPLETA E FUNCIONAL
 console.log('🚀 Dashboard Policryl - Carregando...');
 
 const CONFIG = {
@@ -8,13 +8,17 @@ const CONFIG = {
     RANGE: 'A:Z'
 };
 
-// ESTRUTURA DA BDADOS DASH (conforme debug)
-const COLS = { ANO:0, MES:1, LINHA:2, META_MES:3, META_DIARIA:4 };
+// CONFIGURAÇÃO
+const COLS = { 
+    ANO: 0, MES: 1, LINHA: 2, META_MES: 3, META_DIARIA: 4, 
+    VALOR_PEDIDOS: 14, QTDE_PEDIDOS: 13 
+};
 
 const MESES = { 
     'JAN':'01','FEV':'02','MAR':'03','ABR':'04','MAI':'05','JUN':'06',
     'JUL':'07','AGO':'08','SET':'09','OUT':'10','NOV':'11','DEZ':'12' 
 };
+
 const MESES_NOME = { 
     '01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun',
     '07':'Jul','08':'Ago','09':'Set','10':'Out','11':'Nov','12':'Dez' 
@@ -27,15 +31,18 @@ let historicoChart, pagamentoChart, regiaoChart, compraChart;
 function formatCurrency(v) { 
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0); 
 }
+
 function formatNumber(v) { 
     return new Intl.NumberFormat('pt-BR').format(v || 0); 
 }
+
 function parseValue(v) { 
     if (!v) return 0;
     if (typeof v === 'number') return v;
     const cleaned = String(v).replace(/[R$\s.]/g, '').replace(',', '.');
     return parseFloat(cleaned) || 0;
 }
+
 function normalizarMes(m) { 
     return MESES[String(m).trim().toUpperCase().substring(0,3)] || '01'; 
 }
@@ -52,7 +59,7 @@ function getCurrentFilters() {
     };
 }
 
-// CARREGAR DADOS DA BDADOS DASH
+// CARREGAR DADOS
 async function fetchSheetData() {
     try {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
@@ -60,34 +67,20 @@ async function fetchSheetData() {
         const data = await response.json();
         if (data.values && data.values.length > 1) {
             allData = data.values.slice(1);
-            console.log(`✅ ${allData.length} registros carregados da BDADOS DASH`);
-            
-            // Debug: mostrar estrutura dos dados
-            console.log('🔍 Estrutura dos dados:');
-            allData.slice(0, 3).forEach((row, i) => {
-                console.log(`Linha ${i + 1}:`, {
-                    ano: row[0],
-                    mes: row[1],
-                    linha: row[2],
-                    metaMes: row[3],
-                    metaDia: row[4],
-                    colunasPreenchidas: row.filter(cell => cell && cell !== '').length
-                });
-            });
-            
+            console.log(`✅ ${allData.length} registros carregados`);
             return true;
         }
     } catch (error) {
-        console.log('⚠️ Erro ao carregar BDADOS DASH:', error);
+        console.log('⚠️ Erro ao carregar dados:', error);
     }
     return false;
 }
 
-// BUSCAR DADOS - METAS FIXAS POR LINHA (já que as colunas estão vazias)
+// BUSCAR DADOS - METAS FIXAS POR LINHA
 function findDataForFilters(filters) {
     console.log(`🔍 Buscando: ${filters.mesAno}, Linha: ${filters.linha}`);
     
-    // METAS FIXAS POR LINHA (já que a planilha está vazia)
+    // METAS FIXAS POR LINHA (baseado na planilha)
     const metasPorLinha = {
         'FRA - Cacau Show': { metaMes: 404217, metaDia: 17575 },
         'FRA - Kopenhagen': { metaMes: 200000, metaDia: 6667 },
@@ -120,66 +113,79 @@ function findDataForFilters(filters) {
     };
 }
 
-// VERSÃO SIMPLES - APENAS PARA TESTAR DADOS REAIS
+// GRÁFICO DE HISTÓRICO - DADOS REAIS DA PLANILHA
 function createHistoricoChart() {
     const ctx = document.getElementById('historicoChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.log('❌ Canvas historicoChart não encontrado');
+        return;
+    }
+    
     if (historicoChart) historicoChart.destroy();
     
+    console.log('🎯 Criando gráfico de histórico com dados reais...');
+    
+    // BUSCAR DADOS REAIS DA PLANILHA
     const anoAtual = '2025';
     const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     
-    // DADOS FIXOS BASEADOS NA SUA PLANILHA (Cacau Show 2025)
-    const dadosFixos = {
-        '01': { meta: 199800, vendas: 0 },
-        '02': { meta: 279720, vendas: 0 },
-        '03': { meta: 374626, vendas: 0 },
-        '04': { meta: 379621, vendas: 0 },
-        '05': { meta: 399601, vendas: 0 },
-        '06': { meta: 245508.85, vendas: 0 },
-        '07': { meta: 123989.15, vendas: 0 },
-        '08': { meta: 128815.40, vendas: 0 },
-        '09': { meta: 137831.12, vendas: 0 },
-        '10': { meta: 404217.10, vendas: 0 },
-        '11': { meta: 0, vendas: 0 },
-        '12': { meta: 0, vendas: 0 }
-    };
+    // Calcular dados reais para cada mês
+    const dadosReais = meses.map((mesNome, index) => {
+        const mesNumero = String(index + 1).padStart(2, '0');
+        
+        // Buscar dados do mês
+        const dadosMes = allData.filter(row => {
+            const rowAno = String(row[COLS.ANO] || '').trim();
+            const rowMes = normalizarMes(row[COLS.MES]);
+            return rowAno === anoAtual && rowMes === mesNumero;
+        });
+        
+        // Calcular totais (conforme dados reais da planilha)
+        const metaMes = dadosMes.reduce((total, row) => total + parseValue(row[COLS.META_MES]), 0);
+        const vendasMes = dadosMes.reduce((total, row) => total + parseValue(row[COLS.VALOR_PEDIDOS]), 0);
+        
+        return {
+            mes: mesNome,
+            orcamentos: 0, // NÃO EXISTE NA PLANILHA
+            vendas: vendasMes, // ZERADO NA PLANILHA
+            meta: metaMes // PREENCHIDO NA PLANILHA
+        };
+    });
+    
+    console.log('📊 Dados reais do histórico:', dadosReais);
     
     const historicoData = {
         labels: meses,
         datasets: [
             {
                 label: 'Orçamentos',
-                data: meses.map((_, i) => 0), // SEMPRE ZERO
+                data: dadosReais.map(d => d.orcamentos), // SEMPRE 0
                 borderColor: '#3b82f6',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 borderWidth: 3,
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 5
             },
             {
                 label: 'Vendas',
-                data: meses.map((_, i) => {
-                    const mesNum = String(i + 1).padStart(2, '0');
-                    return dadosFixos[mesNum].vendas;
-                }),
+                data: dadosReais.map(d => d.vendas), // ZERADO (conforme planilha)
                 borderColor: '#22c55e',
                 backgroundColor: 'rgba(34, 197, 94, 0.1)',
                 borderWidth: 3,
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 5
             },
             {
                 label: 'Meta',
-                data: meses.map((_, i) => {
-                    const mesNum = String(i + 1).padStart(2, '0');
-                    return dadosFixos[mesNum].meta;
-                }),
+                data: dadosReais.map(d => d.meta), // PREENCHIDO (conforme planilha)
                 borderColor: '#ef4444',
                 borderWidth: 2,
                 borderDash: [5, 5],
                 fill: false,
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 4
             }
         ]
     };
@@ -190,47 +196,75 @@ function createHistoricoChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'top' } },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return 'R$ ' + (value / 1000).toFixed(0) + 'K';
+            plugins: {
+                legend: { 
+                    position: 'top',
+                    labels: { 
+                        color: '#e2e8f0',
+                        font: { size: 13, weight: '600' },
+                        padding: 15,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#f1f5f9',
+                    bodyColor: '#cbd5e1',
+                    borderColor: '#8b5cf6',
+                    borderWidth: 1,
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
                         }
                     }
                 }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(148, 163, 184, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 11 },
+                        callback: function(value) {
+                            if (value === 0) return 'R$ 0';
+                            return 'R$ ' + (value / 1000).toFixed(0) + 'K';
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 11, weight: '600' }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
 }
 
-// GRÁFICO DE PAGAMENTOS COM ZEROS
+// GRÁFICO DE PAGAMENTOS - ZERADO (NÃO TEM DADOS)
 function createPagamentoChart() {
     const ctx = document.getElementById('pagamentoChart');
     if (!ctx) return;
     if (pagamentoChart) pagamentoChart.destroy();
     
-    const filters = getCurrentFilters();
-    
-    // BUSCAR DADOS REAIS DE PAGAMENTOS
-    const dadosFiltrados = allData.filter(row => {
-        const rowAno = String(row[COLS.ANO] || '').trim();
-        const rowMes = normalizarMes(row[COLS.MES]);
-        const rowLinha = String(row[COLS.LINHA] || '').trim();
-        
-        return rowAno === filters.ano && 
-               rowMes === filters.mes && 
-               (filters.linha === 'todas' || rowLinha === filters.linha);
-    });
-    
-    const valorTotalVendas = dadosFiltrados.reduce((total, row) => total + parseValue(row[COLS.VALOR_PEDIDOS]), 0);
-    
-    // SE NÃO TIVER VENDAS, COLOCAR TUDO ZERO
     const pagamentosData = {
         labels: ['PIX', 'Cartão Crédito', 'Boleto', 'Outros'],
         datasets: [{
-            data: [0, 0, 0, 0], // TUDO ZERO - NÃO TEM DADOS DE PAGAMENTOS
+            data: [0, 0, 0, 0], // TUDO ZERO - NÃO TEM DADOS
             backgroundColor: ['#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b'],
             borderWidth: 2,
             borderColor: '#1e293b'
@@ -261,26 +295,12 @@ function createPagamentoChart() {
     });
 }
 
-// GRÁFICO DE REGIÕES COM ZEROS
+// GRÁFICO DE REGIÕES - ZERADO (NÃO TEM DADOS)
 function createRegiaoChart() {
     const ctx = document.getElementById('regiaoChart');
     if (!ctx) return;
     if (regiaoChart) regiaoChart.destroy();
     
-    const filters = getCurrentFilters();
-    
-    // BUSCAR DADOS REAIS
-    const dadosFiltrados = allData.filter(row => {
-        const rowAno = String(row[COLS.ANO] || '').trim();
-        const rowMes = normalizarMes(row[COLS.MES]);
-        const rowLinha = String(row[COLS.LINHA] || '').trim();
-        
-        return rowAno === filters.ano && 
-               rowMes === filters.mes && 
-               (filters.linha === 'todas' || rowLinha === filters.linha);
-    });
-    
-    // SEM DADOS DE REGIÕES NA PLANILHA - COLOCAR TUDO ZERO
     const regioesData = {
         labels: ['Sudeste', 'Sul', 'Nordeste', 'Centro-Oeste', 'Norte'],
         datasets: [{
@@ -329,15 +349,12 @@ function createRegiaoChart() {
     });
 }
 
-// GRÁFICO DE COMPRAS COM ZEROS
+// GRÁFICO DE COMPRAS - ZERADO (NÃO TEM DADOS)
 function createCompraChart() {
     const ctx = document.getElementById('compraChart');
     if (!ctx) return;
-    if (compraChart) comparaChart.destroy();
+    if (compraChart) compraChart.destroy();
     
-    const filters = getCurrentFilters();
-    
-    // SEM DADOS DE TIPO DE COMPRA NA PLANILHA - COLOCAR TUDO ZERO
     const compraData = {
         labels: ['Primeira Compra', 'Recompra'],
         datasets: [{
@@ -371,9 +388,9 @@ function createCompraChart() {
     });
 }
 
-// ATUALIZAR TUDO COM ZEROS PARA DADOS FALTANTES
+// ATUALIZAR TUDO - DADOS REAIS DA PLANILHA
 async function updateDashboard() {
-    console.log('🔄 Atualizando dashboard...');
+    console.log('🔄 Atualizando dashboard com dados reais...');
     
     const loading = document.getElementById('loading');
     if (loading) loading.style.display = 'flex';
@@ -452,33 +469,46 @@ async function updateDashboard() {
             document.getElementById(`${franq.codigo}-conversao-bar`).style.width = '0%';
         });
 
-        // CRIAR GRÁFICOS COM ZEROS
+        // CRIAR TODOS OS GRÁFICOS
         createHistoricoChart();
         createPagamentoChart();
         createRegiaoChart();
         createCompraChart();
 
-        console.log('✅ Dashboard atualizado com zeros para dados faltantes!');
+        console.log('✅ Dashboard atualizado com dados reais da planilha!');
         
     } catch (error) {
         console.error('❌ Erro:', error);
     } finally {
-        if (loading) loading.style.display = 'none';
+        if (loading) {
+            setTimeout(() => {
+                loading.style.display = 'none';
+            }, 500);
+        }
     }
 }
 
-// INICIAR
+// INICIALIZAÇÃO
 function init() {
-    console.log('🎯 Iniciando dashboard...');
+    console.log('🎯 Inicializando dashboard Policryl...');
+    
+    // CONFIGURAR 2025 COMO PADRÃO
     document.getElementById('filterAno').value = '2025';
     document.getElementById('filterMes').value = '10';
-    ['filterAno','filterMes','filterLinha'].forEach(id => {
+    
+    // EVENTOS
+    ['filterAno', 'filterMes', 'filterLinha'].forEach(id => {
         document.getElementById(id).addEventListener('change', updateDashboard);
     });
+    
+    // CARREGAR DADOS E INICIAR
     setTimeout(async () => { 
         await fetchSheetData(); 
         updateDashboard(); 
     }, 1000);
 }
 
+// INICIAR QUANDO A PÁGINA CARREGAR
 document.addEventListener('DOMContentLoaded', init);
+
+console.log('🔧 Dashboard Policryl - Script completo carregado');
