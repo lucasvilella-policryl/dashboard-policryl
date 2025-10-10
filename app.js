@@ -295,36 +295,22 @@ function calculateHistoricoAnual(data, ano) {
     
     return meses.map((mesNome, idx) => {
         const mesAno = mesNome + '/' + ano;
-        const rows = data.filter(r => {
-            const mesRow = r[COLS.MES] || '';
-            return mesRow === mesAno;
-        });
+        const rows = data.filter(r => (r[COLS.MES] || '') === mesAno);
         
-        // Orçamentos: pedidos não expedidos
-        const orcamentos = rows
-            .filter(row => !row[COLS.EXPEDIDO_EM])
-            .reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO]), 0);
+        const orcamentos = rows.filter(r => !r[COLS.EXPEDIDO_EM])
+            .reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
         
-        // Vendas: pedidos expedidos
-        const vendas = rows
-            .filter(row => row[COLS.EXPEDIDO_EM])
-            .reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO]), 0);
+        const vendas = rows.filter(r => r[COLS.EXPEDIDO_EM])
+            .reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
         
-        // Meta do mês
         const mm = String(idx + 1).padStart(2, '0');
-        const metasMes = METAS_CACHE.filter(m => 
-            m.ano === String(ano) && m.mes === mm
-        );
-        const meta = metasMes.reduce((sum, m) => sum + (m.metaMes || 0), 0);
+        const metasMes = METAS_CACHE.filter(m => m.ano === String(ano) && m.mes === mm);
+        const meta = metasMes.reduce((s, m) => s + (m.metaMes || 0), 0);
         
-        return {
-            mes: mesNome,
-            orcamentos,
-            vendas,
-            meta
-        };
+        return { mes: mesNome, orcamentos, vendas, meta };
     });
 }
+
 function calculatePagamentos(data, filters) {
     const filtered = filterData(data, filters);
     const pagamentos = {};
