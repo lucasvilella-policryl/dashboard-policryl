@@ -252,6 +252,10 @@ body {
     border-color: rgba(220, 20, 60, 0.6);
 }
 
+.franquia-card.kop {
+    border-color: rgba(220, 20, 60, 0.6);
+}
+
 .franquia-card.bc {
     border-color: rgba(255, 107, 53, 0.6);
 }
@@ -260,11 +264,23 @@ body {
     border-color: rgba(255, 215, 0, 0.6);
 }
 
+.franquia-card.plb {
+    border-color: rgba(255, 215, 0, 0.6);
+}
+
 .franquia-card.id {
     border-color: rgba(30, 144, 255, 0.6);
 }
 
+.franquia-card.ind {
+    border-color: rgba(30, 144, 255, 0.6);
+}
+
 .franquia-card.sk {
+    border-color: rgba(138, 43, 226, 0.6);
+}
+
+.franquia-card.skd {
     border-color: rgba(138, 43, 226, 0.6);
 }
 
