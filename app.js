@@ -1,23 +1,3 @@
-async function debugSheetData() {
-    try {
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
-        console.log('🔗 URL:', url);
-        
-        const response = await fetch(url);
-        const data = await response.json();
-        console.log('📊 Dados brutos:', data);
-        
-        if (data.values) {
-            console.log('✅ Cabeçalhos:', data.values[0]);
-            console.log('✅ Primeira linha:', data.values[1]);
-        }
-    } catch (error) {
-        console.error('❌ Erro no debug:', error);
-    }
-}
-
-// Chame esta função no updateDashboard()
-
 // === [INJECTED] Utils & Metas (GVIZ) =========================================
 const PT3_TO_MM = {
   'JAN':'01','FEV':'02','MAR':'03','ABR':'04','MAI':'05','JUN':'06',
@@ -637,6 +617,7 @@ function createRegiaoChart(data, filters) {
 
 
 function createCompraChart(data, filters){
+    // tenta localizar coluna "Compra" no cabeçalho
     const colCompra = getColIndexByTitle('Compra');
     const canvas = document.getElementById('compraChart') || document.getElementById('distribuicaoChart');
     if (!canvas){
@@ -650,7 +631,6 @@ function createCompraChart(data, filters){
 
     if (colCompra >= 0){
         f.forEach(r => {
-            if (!r) return;
             const v = (r[colCompra] || '').toString().toLowerCase();
             if (v.includes('primeira')) counts['Primeira compra']++;
             else if (v.includes('recompra')) counts['Recompra']++;
@@ -660,8 +640,12 @@ function createCompraChart(data, filters){
         console.warn('Coluna "Compra" não encontrada no cabeçalho. Mantendo 0.');
     }
 
-    if (window.compraChart) window.compraChart.destroy();
-    window.compraChart = new Chart(ctx, {
+    // CORREÇÃO: Use a variável global correta
+    if (window.compraChartInstance) {
+        window.compraChartInstance.destroy();
+    }
+
+    window.compraChartInstance = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: Object.keys(counts),
@@ -682,7 +666,7 @@ function createCompraChart(data, filters){
                 },
                 tooltip: {
                     callbacks: {
-                        label: (c)=> ` ${c.label}: ${c.parsed} pedidos`
+                        label: (context) => ` ${context.label}: ${context.parsed} pedidos`
                     }
                 }
             }
