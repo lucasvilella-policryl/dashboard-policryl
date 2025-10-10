@@ -120,7 +120,7 @@ function findDataForFilters(filters) {
     };
 }
 
-// GRÁFICO DE HISTÓRICO COM DADOS REAIS
+// GRÁFICO DE HISTÓRICO COM ZEROS PARA DADOS FALTANTES
 function createHistoricoChart() {
     const ctx = document.getElementById('historicoChart');
     if (!ctx) {
@@ -136,7 +136,6 @@ function createHistoricoChart() {
     
     const dadosReais = meses.map((mesNome, index) => {
         const mesNumero = String(index + 1).padStart(2, '0');
-        const mesAno = `${mesNome}/${anoAtual}`;
         
         // Buscar dados do mês atual
         const dadosMes = allData.filter(row => {
@@ -145,16 +144,15 @@ function createHistoricoChart() {
             return rowAno === anoAtual && rowMes === mesNumero;
         });
         
-        // Calcular totais do mês
+        // Calcular totais do mês - SE NÃO TIVER DADOS, COLOCAR 0
         const metaMes = dadosMes.reduce((total, row) => total + parseValue(row[COLS.META_MES]), 0);
         const valorPedidos = dadosMes.reduce((total, row) => total + parseValue(row[COLS.VALOR_PEDIDOS]), 0);
         
-        // Se não tem dados reais, usar valores proporcionais
         return {
             mes: mesNome,
-            orcamentos: metaMes > 0 ? metaMes * 0.7 : 150000 * 0.7, // 70% da meta como orçamentos
-            vendas: valorPedidos > 0 ? valorPedidos : metaMes * 0.6, // 60% da meta como vendas
-            meta: metaMes > 0 ? metaMes : 150000
+            orcamentos: 0, // SEM DADOS DE ORÇAMENTOS NA PLANILHA
+            vendas: valorPedidos, // USAR VALOR REAL OU 0
+            meta: metaMes // USAR META REAL OU 0
         };
     });
     
@@ -165,7 +163,7 @@ function createHistoricoChart() {
         datasets: [
             {
                 label: 'Orçamentos',
-                data: dadosReais.map(d => d.orcamentos),
+                data: dadosReais.map(d => d.orcamentos), // SEMPRE 0
                 borderColor: '#3b82f6',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 borderWidth: 3,
@@ -174,7 +172,7 @@ function createHistoricoChart() {
             },
             {
                 label: 'Vendas',
-                data: dadosReais.map(d => d.vendas),
+                data: dadosReais.map(d => d.vendas), // DADOS REAIS OU 0
                 borderColor: '#22c55e',
                 backgroundColor: 'rgba(34, 197, 94, 0.1)',
                 borderWidth: 3,
@@ -183,7 +181,7 @@ function createHistoricoChart() {
             },
             {
                 label: 'Meta',
-                data: dadosReais.map(d => d.meta),
+                data: dadosReais.map(d => d.meta), // DADOS REAIS OU 0
                 borderColor: '#ef4444',
                 borderWidth: 2,
                 borderDash: [5, 5],
@@ -232,7 +230,7 @@ function createHistoricoChart() {
     });
 }
 
-// GRÁFICO DE PAGAMENTOS COM DADOS REAIS
+// GRÁFICO DE PAGAMENTOS COM ZEROS
 function createPagamentoChart() {
     const ctx = document.getElementById('pagamentoChart');
     if (!ctx) return;
@@ -240,8 +238,7 @@ function createPagamentoChart() {
     
     const filters = getCurrentFilters();
     
-    // BUSCAR DADOS REAIS DE PAGAMENTOS (se existirem na planilha)
-    // Por enquanto, vamos usar dados baseados no valor total de vendas
+    // BUSCAR DADOS REAIS DE PAGAMENTOS
     const dadosFiltrados = allData.filter(row => {
         const rowAno = String(row[COLS.ANO] || '').trim();
         const rowMes = normalizarMes(row[COLS.MES]);
@@ -254,24 +251,11 @@ function createPagamentoChart() {
     
     const valorTotalVendas = dadosFiltrados.reduce((total, row) => total + parseValue(row[COLS.VALOR_PEDIDOS]), 0);
     
-    // Se não tem vendas, usar distribuição padrão
-    const pagamentosData = valorTotalVendas > 0 ? {
+    // SE NÃO TIVER VENDAS, COLOCAR TUDO ZERO
+    const pagamentosData = {
         labels: ['PIX', 'Cartão Crédito', 'Boleto', 'Outros'],
         datasets: [{
-            data: [
-                valorTotalVendas * 0.40, // 40% PIX
-                valorTotalVendas * 0.35, // 35% Cartão
-                valorTotalVendas * 0.20, // 20% Boleto
-                valorTotalVendas * 0.05  // 5% Outros
-            ],
-            backgroundColor: ['#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b'],
-            borderWidth: 2,
-            borderColor: '#1e293b'
-        }]
-    } : {
-        labels: ['PIX', 'Cartão Crédito', 'Boleto', 'Outros'],
-        datasets: [{
-            data: [40, 35, 20, 5],
+            data: [0, 0, 0, 0], // TUDO ZERO - NÃO TEM DADOS DE PAGAMENTOS
             backgroundColor: ['#22c55e', '#3b82f6', '#8b5cf6', '#f59e0b'],
             borderWidth: 2,
             borderColor: '#1e293b'
@@ -292,10 +276,7 @@ function createPagamentoChart() {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const valor = context.parsed;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentual = ((valor / total) * 100).toFixed(1);
-                            return `${context.label}: ${formatCurrency(valor)} (${percentual}%)`;
+                            return `${context.label}: ${formatCurrency(context.parsed)}`;
                         }
                     }
                 }
@@ -305,7 +286,7 @@ function createPagamentoChart() {
     });
 }
 
-// GRÁFICO DE REGIÕES COM DADOS REAIS
+// GRÁFICO DE REGIÕES COM ZEROS
 function createRegiaoChart() {
     const ctx = document.getElementById('regiaoChart');
     if (!ctx) return;
@@ -313,7 +294,7 @@ function createRegiaoChart() {
     
     const filters = getCurrentFilters();
     
-    // BUSCAR DADOS REAIS (simulação - você precisará adicionar colunas de região na planilha)
+    // BUSCAR DADOS REAIS
     const dadosFiltrados = allData.filter(row => {
         const rowAno = String(row[COLS.ANO] || '').trim();
         const rowMes = normalizarMes(row[COLS.MES]);
@@ -324,30 +305,12 @@ function createRegiaoChart() {
                (filters.linha === 'todas' || rowLinha === filters.linha);
     });
     
-    const totalPedidos = dadosFiltrados.reduce((total, row) => total + parseValue(row[COLS.QTDE_PEDIDOS]), 0);
-    
-    // Distribuição regional baseada no total de pedidos
-    const regioesData = totalPedidos > 0 ? {
+    // SEM DADOS DE REGIÕES NA PLANILHA - COLOCAR TUDO ZERO
+    const regioesData = {
         labels: ['Sudeste', 'Sul', 'Nordeste', 'Centro-Oeste', 'Norte'],
         datasets: [{
             label: 'Pedidos por Região',
-            data: [
-                totalPedidos * 0.45, // 45% Sudeste
-                totalPedidos * 0.25, // 25% Sul
-                totalPedidos * 0.15, // 15% Nordeste
-                totalPedidos * 0.10, // 10% Centro-Oeste
-                totalPedidos * 0.05  // 5% Norte
-            ],
-            backgroundColor: 'rgba(139, 92, 246, 0.8)',
-            borderColor: '#8b5cf6',
-            borderWidth: 2,
-            borderRadius: 8
-        }]
-    } : {
-        labels: ['Sudeste', 'Sul', 'Nordeste', 'Centro-Oeste', 'Norte'],
-        datasets: [{
-            label: 'Pedidos por Região',
-            data: [45, 25, 15, 10, 5],
+            data: [0, 0, 0, 0, 0], // TUDO ZERO
             backgroundColor: 'rgba(139, 92, 246, 0.8)',
             borderColor: '#8b5cf6',
             borderWidth: 2,
@@ -391,43 +354,19 @@ function createRegiaoChart() {
     });
 }
 
-// GRÁFICO DE COMPRAS COM DADOS REAIS
+// GRÁFICO DE COMPRAS COM ZEROS
 function createCompraChart() {
     const ctx = document.getElementById('compraChart');
     if (!ctx) return;
-    if (compraChart) compraChart.destroy();
+    if (compraChart) comparaChart.destroy();
     
     const filters = getCurrentFilters();
     
-    // BUSCAR DADOS REAIS (simulação - você precisará adicionar colunas de tipo de compra na planilha)
-    const dadosFiltrados = allData.filter(row => {
-        const rowAno = String(row[COLS.ANO] || '').trim();
-        const rowMes = normalizarMes(row[COLS.MES]);
-        const rowLinha = String(row[COLS.LINHA] || '').trim();
-        
-        return rowAno === filters.ano && 
-               rowMes === filters.mes && 
-               (filters.linha === 'todas' || rowLinha === filters.linha);
-    });
-    
-    const totalPedidos = dadosFiltrados.reduce((total, row) => total + parseValue(row[COLS.QTDE_PEDIDOS]), 0);
-    
-    // Distribuição baseada no total de pedidos
-    const compraData = totalPedidos > 0 ? {
+    // SEM DADOS DE TIPO DE COMPRA NA PLANILHA - COLOCAR TUDO ZERO
+    const compraData = {
         labels: ['Primeira Compra', 'Recompra'],
         datasets: [{
-            data: [
-                totalPedidos * 0.35, // 35% primeira compra
-                totalPedidos * 0.65  // 65% recompra
-            ],
-            backgroundColor: ['#22c55e', '#3b82f6'],
-            borderWidth: 2,
-            borderColor: '#1e293b'
-        }]
-    } : {
-        labels: ['Primeira Compra', 'Recompra'],
-        datasets: [{
-            data: [35, 65],
+            data: [0, 0], // TUDO ZERO
             backgroundColor: ['#22c55e', '#3b82f6'],
             borderWidth: 2,
             borderColor: '#1e293b'
@@ -448,10 +387,7 @@ function createCompraChart() {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const valor = context.parsed;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentual = ((valor / total) * 100).toFixed(1);
-                            return `${context.label}: ${formatNumber(valor)} pedidos (${percentual}%)`;
+                            return `${context.label}: ${formatNumber(context.parsed)} pedidos`;
                         }
                     }
                 }
@@ -460,9 +396,9 @@ function createCompraChart() {
     });
 }
 
-// ATUALIZAR TUDO (VERSÃO COM DADOS REAIS)
+// ATUALIZAR TUDO COM ZEROS PARA DADOS FALTANTES
 async function updateDashboard() {
-    console.log('🔄 Atualizando dashboard com dados reais...');
+    console.log('🔄 Atualizando dashboard...');
     
     const loading = document.getElementById('loading');
     if (loading) loading.style.display = 'flex';
@@ -485,14 +421,14 @@ async function updateDashboard() {
         const valorTotalVendas = dadosFiltrados.reduce((total, row) => total + parseValue(row[COLS.VALOR_PEDIDOS]), 0);
         const totalPedidos = dadosFiltrados.reduce((total, row) => total + parseValue(row[COLS.QTDE_PEDIDOS]), 0);
         
-        // USAR DADOS REAIS QUANDO DISPONÍVEIS
+        // USAR DADOS REAIS OU ZERO
         const kpis = {
-            metaMes: currentRow ? parseValue(currentRow[COLS.META_MES]) : 150000,
-            metaDia: currentRow ? parseValue(currentRow[COLS.META_DIA]) : 5000,
-            valorVendas: valorTotalVendas > 0 ? valorTotalVendas : 87500,
-            pedidosAtraso: 8, 
-            pedidosLiberar: 15, 
-            pedidosExpedidos: totalPedidos > 0 ? totalPedidos : 42
+            metaMes: currentRow ? parseValue(currentRow[COLS.META_MES]) : 0,
+            metaDia: currentRow ? parseValue(currentRow[COLS.META_DIA]) : 0,
+            valorVendas: valorTotalVendas, // PODE SER 0
+            pedidosAtraso: 0, // SEM DADOS
+            pedidosLiberar: 0, // SEM DADOS
+            pedidosExpedidos: totalPedidos // PODE SER 0
         };
 
         // ATUALIZAR KPIs
@@ -504,7 +440,7 @@ async function updateDashboard() {
         document.getElementById('pedidosExpedidos').textContent = formatNumber(kpis.pedidosExpedidos);
         document.getElementById('mesRef').textContent = filters.mesAno;
 
-        // FRANQUIAS COM DADOS REAIS
+        // FRANQUIAS COM DADOS REAIS OU ZERO
         const franquias = [
             { codigo: 'cs', nome: 'FRA - Cacau Show' },
             { codigo: 'kp', nome: 'FRA - Kopenhagen' },
@@ -527,27 +463,27 @@ async function updateDashboard() {
             
             const qtdPed = dadosFranquia.reduce((total, row) => total + parseValue(row[COLS.QTDE_PEDIDOS]), 0);
             const valPed = dadosFranquia.reduce((total, row) => total + parseValue(row[COLS.VALOR_PEDIDOS]), 0);
-            const valOrc = valPed > 0 ? valPed * 1.3 : 25000; // Orçamento 30% maior que vendas
-            const qtdOrc = qtdPed > 0 ? qtdPed * 1.3 : 25;   // Qtd orçamentos 30% maior
-            const ticket = qtdPed > 0 ? valPed / qtdPed : 1000;
-            const conversao = qtdOrc > 0 ? (qtdPed / qtdOrc) * 100 : 60;
+            const qtdOrc = 0; // SEM DADOS
+            const valOrc = 0; // SEM DADOS
+            const ticket = qtdPed > 0 ? valPed / qtdPed : 0;
+            const conversao = 0; // SEM DADOS
             
             document.getElementById(`${franq.codigo}-qtd-orc`).textContent = formatNumber(qtdOrc);
             document.getElementById(`${franq.codigo}-val-orc`).textContent = formatCurrency(valOrc);
             document.getElementById(`${franq.codigo}-qtd-ped`).textContent = formatNumber(qtdPed);
             document.getElementById(`${franq.codigo}-val-ped`).textContent = formatCurrency(valPed);
             document.getElementById(`${franq.codigo}-ticket`).textContent = formatCurrency(ticket);
-            document.getElementById(`${franq.codigo}-conversao`).textContent = conversao.toFixed(1) + '%';
-            document.getElementById(`${franq.codigo}-conversao-bar`).style.width = Math.min(conversao, 100) + '%';
+            document.getElementById(`${franq.codigo}-conversao`).textContent = formatNumber(conversao) + '%';
+            document.getElementById(`${franq.codigo}-conversao-bar`).style.width = '0%';
         });
 
-        // CRIAR GRÁFICOS COM DADOS REAIS
+        // CRIAR GRÁFICOS COM ZEROS
         createHistoricoChart();
         createPagamentoChart();
         createRegiaoChart();
         createCompraChart();
 
-        console.log('✅ Dashboard atualizado com dados reais!');
+        console.log('✅ Dashboard atualizado com zeros para dados faltantes!');
         
     } catch (error) {
         console.error('❌ Erro:', error);
