@@ -63,7 +63,7 @@ function resolveMetasFor(filters){
 // Configuração do Google Sheets
 const CONFIG = {
     SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
-    API_KEY: 'AIzaSyDBRuUuQZoLWaT4VSPuiPHGt0J4iviWR2g',
+    // API_KEY não é mais necessária com a abordagem GVIZ
     SHEET_NAME: 'PEDIDOS GERAL',
     RANGE: 'A:AE'
 };
@@ -275,22 +275,36 @@ function calculateHistoricoAnual(data, ano) {
     
     return meses.map((mesNome, idx) => {
         const mesAno = mesNome + '/' + ano;
-        const rows = data.filter(r => (r[COLS.MES] || '') === mesAno);
+        const rows = data.filter(r => {
+            const mesRow = r[COLS.MES] || '';
+            return mesRow === mesAno;
+        });
         
-        const orcamentos = rows.filter(r => !r[COLS.EXPEDIDO_EM])
-            .reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
+        // Orçamentos: pedidos não expedidos
+        const orcamentos = rows
+            .filter(row => !row[COLS.EXPEDIDO_EM])
+            .reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO]), 0);
         
-        const vendas = rows.filter(r => r[COLS.EXPEDIDO_EM])
-            .reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
+        // Vendas: pedidos expedidos
+        const vendas = rows
+            .filter(row => row[COLS.EXPEDIDO_EM])
+            .reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO]), 0);
         
+        // Meta do mês
         const mm = String(idx + 1).padStart(2, '0');
-        const metasMes = METAS_CACHE.filter(m => m.ano === String(ano) && m.mes === mm);
-        const meta = metasMes.reduce((s, m) => s + (m.metaMes || 0), 0);
+        const metasMes = METAS_CACHE.filter(m => 
+            m.ano === String(ano) && m.mes === mm
+        );
+        const meta = metasMes.reduce((sum, m) => sum + (m.metaMes || 0), 0);
         
-        return { mes: mesNome, orcamentos, vendas, meta };
+        return {
+            mes: mesNome,
+            orcamentos,
+            vendas,
+            meta
+        };
     });
 }
-
 function calculatePagamentos(data, filters) {
     const filtered = filterData(data, filters);
     const pagamentos = {};
