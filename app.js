@@ -1,22 +1,12 @@
-// DASHBOARD POLICRYL - BDADOS DASH via CSV Publicado (fix auto-refresh + histórico)
+// DASHBOARD POLICRYL — BDADOS DASH via CSV (robusto, com normalização de filtros)
+// -------------------------------------------------------------
 
-// === CONFIG CSV PUBLICADO ===
-const PUB = {
-  // do seu link CSV publicado:
-  // https://docs.google.com/spreadsheets/d/e/<PUB_ID>/pub?gid=<GID_DASH>&single=true&output=csv
-  PUB_ID: '2PACX-1vQKstKflONSWvQ6xfVkMdM53mveopLXVGNv9CyQT0kRbjdI7IGIVzvvMPLSXNyQ-xZTQEvDmKr1jI_I',
-  GID_DASH: '1199309873'
-};
+// === URL do CSV publicado da aba BDADOS DASH ===
+// (o seu link publicado)
+const CSV_URL_DASH =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKstKflONSWvQ6xfVkMdM53mveopLXVGNv9CyQT0kRbjdI7IGIVzvvMPLSXNyQ-xZTQEvDmKr1jI_I/pub?gid=1199309873&single=true&output=csv';
 
-// (mantido apenas como fallback eventual; não é mais usado)
-const CONFIG = {
-  SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
-  API_KEY: 'AIzaSyDBRuUuQZoLWaT4VSPuiPHGt0J4iviWR2g',
-  SHEET_NAME: 'BDADOS DASH',
-  RANGE: 'A:AR'
-};
-
-// ==== MAPEAMENTO DAS COLUNAS (igual ao seu arquivo) ====
+// ==== MAPEAMENTO DAS COLUNAS (igual ao BDADOS DASH) ====
 const COLS = {
   ANO:0, MES:1, LINHA:2,
   META_MES:3, META_DIARIA:4, PORCENTAGEM_META:5,
@@ -36,20 +26,22 @@ const MESES_NOME = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':
 let allData = [];
 let historicoChart, pagamentoChart, regiaoChart, compraChart;
 
-// ==== utils ====
-function formatCurrency(v){return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);}
-function formatNumber(v){return new Intl.NumberFormat('pt-BR').format(v||0);}
-function formatPercent(v){return (v||0).toFixed(1)+'%';}
+// ==================== Utils ====================
+function formatCurrency(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0); }
+function formatNumber(v){ return new Intl.NumberFormat('pt-BR').format(v||0); }
+function formatPercent(v){ return (v||0).toFixed(1)+'%'; }
+
 function parseValue(v){
   if (!v && v!==0) return 0;
   if (typeof v==='number') return v;
-  if (typeof v==='string' && v.includes('R$')) {
+  if (typeof v==='string' && v.includes('R$')){
     const cleaned=v.replace(/[R$\s.]/g,'').replace(',','.');
     return parseFloat(cleaned)||0;
   }
   const cleaned=String(v).replace(/[^\d,.-]/g,'').replace(',','.');
   return parseFloat(cleaned)||0;
 }
+
 function normalizarMes(m){
   const s=String(m||'').trim().toUpperCase();
   if (MESES[s]) return MESES[s];
@@ -57,14 +49,21 @@ function normalizarMes(m){
   if(!isNaN(n)&&n>=1&&n<=12) return String(n).padStart(2,'0');
   return '01';
 }
+
+// normaliza strings para comparação (tira acento/caixa/espaços extras)
+const norm = (s) => String(s ?? '')
+  .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+  .trim().toLowerCase();
+
 function getCurrentFilters(){
-  const ano=document.getElementById('filterAno').value;
-  const mes=document.getElementById('filterMes').value;
-  const linha=document.getElementById('filterLinha').value;
+  const ano  = document.getElementById('filterAno').value;
+  const mes  = document.getElementById('filterMes').value;
+  const rawLinha = document.getElementById('filterLinha').value;
+  const linha = (norm(rawLinha) === 'todas') ? 'todas' : rawLinha; // aceita Todas/TODAS
   return { ano, mes, linha, mesAno:`${MESES_NOME[mes]||'Out'}/${ano}` };
 }
 
-// ==== CSV parser simples (suporta campos com aspas e vírgulas) ====
+// ==================== CSV ====================
 function csvToArray(text){
   const lines = text.split(/\r?\n/).filter(l => l.length>0);
   return lines.map(line => {
@@ -80,34 +79,38 @@ function csvToArray(text){
   });
 }
 
-// ==== CARREGAR BDADOS DASH via CSV publicado ====
 async function fetchSheetData(){
-  const urlCSV = `https://docs.google.com/spreadsheets/d/e/${PUB.PUB_ID}/pub?gid=${PUB.GID_DASH}&single=true&output=csv&cb=${Date.now()}`;
-  const res = await fetch(urlCSV, { cache: 'no-store' });
-  if (!res.ok) throw new Error('HTTP '+res.status+' ao buscar CSV BDADOS DASH');
+  const url = `${CSV_URL_DASH}&cb=${Date.now()}`; // cache-busting
+  const res = await fetch(url, { cache:'no-store' });
+  if (!res.ok) throw new Error('CSV BDADOS DASH HTTP ' + res.status);
   const txt = await res.text();
   const rows = csvToArray(txt);
-  allData = rows.slice(1); // remove cabeçalho
-  console.log('✅ BDADOS DASH via CSV publicado:', allData.length, 'linhas');
+  if (!rows || rows.length <= 1) throw new Error('CSV vazio ou só cabeçalho');
+  allData = rows.slice(1); // sem cabeçalho
+  console.log('✅ BDADOS DASH via CSV:', allData.length, 'linhas');
   return true;
 }
 
-// ==== buscar dados por filtro (igual ao seu) ====
+// ==================== Filtros / Busca ====================
 function findDataForFilters(filters){
+  const linhaFiltroNorm = norm(filters.linha);
+
   const dados = allData.filter(row=>{
-    const rowAno = String(row[COLS.ANO]||'').trim();
-    const rowMes = normalizarMes(row[COLS.MES]);
-    const rowLinha = String(row[COLS.LINHA]||'').trim();
-    return rowAno===filters.ano && rowMes===filters.mes && (filters.linha==='todas' || rowLinha===filters.linha);
+    const rowAno   = String(row[COLS.ANO] || '').trim();
+    const rowMes   = normalizarMes(row[COLS.MES]);
+    const rowLinha = norm(row[COLS.LINHA]);
+    const passaLinha = (linhaFiltroNorm === 'todas') || (rowLinha === linhaFiltroNorm);
+    return rowAno === filters.ano && rowMes === filters.mes && passaLinha;
   });
 
-  if (dados.length===0) return null;
-  if (dados.length===1) return dados[0];
+  if (dados.length === 0) return null;
+  if (dados.length === 1) return dados[0];
 
+  // Consolida somando valores numéricos
   const cons = new Array(Object.keys(COLS).length).fill(0);
   dados.forEach(row=>{
     Object.values(COLS).forEach(idx=>{
-      if (row[idx]!==undefined && row[idx]!==''){
+      if (row[idx] !== undefined && row[idx] !== ''){
         cons[idx] += parseValue(row[idx]);
       }
     });
@@ -115,7 +118,7 @@ function findDataForFilters(filters){
   return cons;
 }
 
-// ==== Histórico: usa ANO do filtro (não 2025 fixo) ====
+// ==================== Gráfico Histórico ====================
 function createHistoricoChart(){
   const canvas = document.getElementById('historicoChart'); if (!canvas) return;
   if (historicoChart) historicoChart.destroy();
@@ -130,9 +133,9 @@ function createHistoricoChart(){
       const m = normalizarMes(row[COLS.MES]);
       return a===ano && m===mm;
     });
-    const meta  = linhas.reduce((s,r)=> s+parseValue(r[COLS.META_MES]), 0);
-    const orc   = linhas.reduce((s,r)=> s+parseValue(r[COLS.VALOR_ORCAMENTOS]), 0);
-    const vend  = linhas.reduce((s,r)=> s+parseValue(r[COLS.VALOR_PEDIDOS]), 0);
+    const meta = linhas.reduce((s,r)=> s + parseValue(r[COLS.META_MES]), 0);
+    const orc  = linhas.reduce((s,r)=> s + parseValue(r[COLS.VALOR_ORCAMENTOS]), 0);
+    const vend = linhas.reduce((s,r)=> s + parseValue(r[COLS.VALOR_PEDIDOS]), 0);
     return { mes:mNome, orcamentos:orc, vendas:vend, meta };
   });
 
@@ -156,7 +159,7 @@ function createHistoricoChart(){
   });
 }
 
-// ==== Gráficos auxiliares (inalterados, só leem do dataset filtrado) ====
+// ==================== Gráficos auxiliares ====================
 function createPagamentoChart(){
   const c = document.getElementById('pagamentoChart'); if(!c) return;
   if (pagamentoChart) pagamentoChart.destroy();
@@ -202,7 +205,7 @@ function createCompraChart(){
   const c = document.getElementById('compraChart'); if(!c) return;
   if (compraChart) compraChart.destroy();
   const f = getCurrentFilters(); const row = findDataForFilters(f);
-  const data={ labels:['Primeira Compra','Recompra'], datasets:[{ 
+  const data={ labels:['Primeira Compra','Recompra'], datasets:[{
     data:[ row?parseValue(row[COLS.PRIMEIRA_COMPRA]):0, row?parseValue(row[COLS.RECOMPRA]):0 ],
     backgroundColor:['#22c55e','#3b82f6'], borderColor:'#1e293b', borderWidth:2 }] };
   compraChart = new Chart(c.getContext('2d'), { type:'pie', data,
@@ -211,7 +214,7 @@ function createCompraChart(){
   });
 }
 
-// ==== UPDATE com fallback de snapshot (não zera em caso de falha) ====
+// ==================== Update (com fallback de snapshot) ====================
 async function updateDashboard(opts = {}){
   const { forceReload = false } = opts;
   const loading = document.getElementById('loading');
@@ -242,6 +245,7 @@ async function updateDashboard(opts = {}){
     document.getElementById('pedidosExpedidos').textContent = formatNumber(kpis.pedidosExpedidos);
     document.getElementById('mesRef').textContent = filters.mesAno;
 
+    // Cards por franquia — soma todas as linhas da franquia no mês/ano
     const franquias = [
       { codigo:'cs',  nome:'FRA - Cacau Show' },
       { codigo:'kp',  nome:'FRA - Kopenhagen' },
@@ -254,21 +258,21 @@ async function updateDashboard(opts = {}){
       const frows = allData.filter(r =>
         String(r[COLS.ANO]).trim()===filters.ano &&
         normalizarMes(r[COLS.MES])===filters.mes &&
-        String(r[COLS.LINHA]).trim()===franq.nome
+        norm(r[COLS.LINHA])===norm(franq.nome)
       );
       if (frows.length){
-        const r=frows[0];
-        const qtdOrc=parseValue(r[COLS.QTDE_ORCAMENTOS]);
-        const valOrc=parseValue(r[COLS.VALOR_ORCAMENTOS]);
-        const qtdPed=parseValue(r[COLS.QTDE_PEDIDOS]);
-        const valPed=parseValue(r[COLS.VALOR_PEDIDOS]);
-        const ticket=qtdPed>0 ? valPed/qtdPed : 0;
-        const conv =qtdOrc>0 ? (qtdPed/qtdOrc)*100 : 0;
+        const qtdOrc = frows.reduce((s,r)=> s + parseValue(r[COLS.QTDE_ORCAMENTOS]), 0);
+        const valOrc = frows.reduce((s,r)=> s + parseValue(r[COLS.VALOR_ORCAMENTOS]), 0);
+        const qtdPed = frows.reduce((s,r)=> s + parseValue(r[COLS.QTDE_PEDIDOS]), 0);
+        const valPed = frows.reduce((s,r)=> s + parseValue(r[COLS.VALOR_PEDIDOS]), 0);
+        const ticket = qtdPed > 0 ? valPed / qtdPed : 0;
+        const conv   = qtdOrc > 0 ? (qtdPed / qtdOrc) * 100 : 0;
+
         document.getElementById(`${franq.codigo}-qtd-orc`).textContent = formatNumber(qtdOrc);
         document.getElementById(`${franq.codigo}-val-orc`).textContent = formatCurrency(valOrc);
         document.getElementById(`${franq.codigo}-qtd-ped`).textContent = formatNumber(qtdPed);
         document.getElementById(`${franq.codigo}-val-ped`).textContent = formatCurrency(valPed);
-        document.getElementById(`${franq.codigo}-ticket`).textContent = formatCurrency(ticket);
+        document.getElementById(`${franq.codigo}-ticket`).textContent  = formatCurrency(ticket);
         document.getElementById(`${franq.codigo}-conversao`).textContent = formatPercent(conv);
         document.getElementById(`${franq.codigo}-conversao-bar`).style.width = Math.min(conv,100)+'%';
       } else {
@@ -276,7 +280,7 @@ async function updateDashboard(opts = {}){
         document.getElementById(`${franq.codigo}-val-orc`).textContent = formatCurrency(0);
         document.getElementById(`${franq.codigo}-qtd-ped`).textContent = '0';
         document.getElementById(`${franq.codigo}-val-ped`).textContent = formatCurrency(0);
-        document.getElementById(`${franq.codigo}-ticket`).textContent = formatCurrency(0);
+        document.getElementById(`${franq.codigo}-ticket`).textContent  = formatCurrency(0);
         document.getElementById(`${franq.codigo}-conversao`).textContent = '0%';
         document.getElementById(`${franq.codigo}-conversao-bar`).style.width = '0%';
       }
@@ -288,13 +292,14 @@ async function updateDashboard(opts = {}){
     createCompraChart();
   }catch(e){
     console.error('❌ Erro updateDashboard:', e);
+    // fallback: mantém o snapshot anterior (não zera a tela)
     if (prev.length){
-      allData = prev;        // fallback: mantém o snapshot, não zera
+      allData = prev;
       createHistoricoChart();
       createPagamentoChart();
       createRegiaoChart();
       createCompraChart();
-    }else{
+    } else {
       alert('Erro ao carregar dados. Veja o console (F12).');
     }
   }finally{
@@ -303,18 +308,19 @@ async function updateDashboard(opts = {}){
   }
 }
 
-// ==== Auto-refresh (2 min) sem zerar dataset ====
+// ==================== Auto-refresh (2 min, sem zerar) ====================
 function startAutoRefresh(){
   console.log('🔄 Auto-refresh a cada 2 minutos…');
   setInterval(()=> updateDashboard({ forceReload:true }), 2*60*1000);
 }
 
-// ==== Init: usa data atual como padrão ====
+// ==================== Init ====================
 function init(){
   const now=new Date();
   document.getElementById('filterAno').value = String(now.getFullYear());
   document.getElementById('filterMes').value = String(now.getMonth()+1).padStart(2,'0');
 
+  // importante: o <option> padrão deve ter value="todas"
   ['filterAno','filterMes','filterLinha'].forEach(id=>{
     document.getElementById(id).addEventListener('change', ()=> updateDashboard());
   });
