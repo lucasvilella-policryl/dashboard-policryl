@@ -1,46 +1,75 @@
-// CONFIGURAÇÃO FINAL - DASHBOARD POLICRYL
+// CONFIGURAÇÃO OTIMIZADA - DASHBOARD POLICRYL
 const CONFIG = {
     SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
     API_KEY: 'AIzaSyDBRuUuQZoLWaT4VSPuiPHGt0J4iviWR2g',
-    SHEET_NAME: 'PEDIDOS GERAL',
-    RANGE: 'A:AE'
+    SHEET_NAME: 'BDADOS DASH',
+    RANGE: 'A:AR' // Até a coluna AR para cobrir todos os dados
 };
 
-console.log('🔥 Dashboard Policryl - Carregando...');
+console.log('🔥 Dashboard Policryl - Carregando dados consolidados...');
 
-// MAPEAMENTO DE COLUNAS BASEADO NA SUA PLANILHA
+// MAPEAMENTO DAS COLUNAS DA NOVA ABA BDADOS DASH
 const COLS = {
-    MES: 0,              // A - MÊS
-    NUM_OMIE: 1,         // B - Nº Omie
-    NUM_VIRTUAL: 2,      // C - Nº L. Virtual
-    LINHA: 3,            // D - Linha
-    MATRIZ_FRANQ: 4,     // E - Matriz ou Franquia?
-    ATENDIMENTO: 5,      // F - Atendimento por
-    CNPJ_CPF: 6,         // G - CNPJ / CPF
-    ESTADO: 7,           // H - Estado
-    REGIAO: 8,           // I - Região Geográfica
-    FORMA_PGTO: 9,       // J - Forma de Pagamento
-    VALOR_PEDIDO: 10,    // K - Valor do Pedido
-    ENXOVAL_REPOS: 11,   // L - Enxoval ou Repos.?
-    DATA_INCLUSAO: 12,   // M - Data da Inclusão
-    ENTRADA_PROD: 13,    // N - Entrad. Produção
-    EMBALADO_EM: 14,     // O - Embalado em
-    ENTRADA_FAT: 15,     // P - Entr. Faturamento
-    NUM_NF: 16,          // Q - Nº Nota Fiscal
-    FATURADO_EM: 17,     // R - Faturado em
-    ENTRADA_EXP: 18,     // S - Entr. Expedição
-    EXPEDIDO_EM: 19,     // T - Expedido em
-    TRANSPORTADORA: 20,  // U - Transportadora
-    DEAD_LINE: 21,       // V - Dead Line
-    STATUS_PEDIDO: 22,   // W - Status do Pedido
-    DURACAO: 23,         // X - Duração do Pedido
-    SITUACAO: 24,        // Y - Situação do Pedido
-    SITUACAO_CONCLUSAO: 25, // Z - Situação da Conclusão
-    MES_PEDIDO: 26,      // AA - Mês do Pedido
-    SEMANA_PEDIDO: 27,   // AB - Semana do Pedido
-    MES_DEADLINE: 28,    // AC - Mês do Dead Line
-    SEMANA_DEADLINE: 29, // AD - Semana do Dead Line
-    MES_FATURAMENTO: 30  // AE - Mês do Faturamento
+    // Colunas básicas
+    ANO: 0,
+    MES: 1,
+    LINHA: 2,
+    
+    // Metas
+    META_MES: 3,
+    META_DIARIA: 4,
+    PORCENTAGEM_META: 5,
+    
+    // Orçamentos
+    QTDE_ORCAMENTOS: 6,
+    VALOR_ORCAMENTOS: 7,
+    TICKET_MEDIO_ORCAMENTOS: 8,
+    QTDE_ITENS_ORCAMENTOS: 9,
+    
+    // Simples Remessa
+    QTDE_SIMPLES_REMESSA: 10,
+    VALOR_SIMPLES_REMESSA: 11,
+    QTDE_ITENS_SIMPLES_REMESSA: 12,
+    
+    // Pedidos
+    QTDE_PEDIDOS: 13,
+    VALOR_PEDIDOS: 14,
+    TICKET_MEDIO_PEDIDOS: 15,
+    QTDE_ITENS_PEDIDOS: 16,
+    TAXA_CONVERSAO_PEDIDOS: 17,
+    TAXA_CONVERSAO_VALORES: 18,
+    
+    // Formas de Pagamento
+    PEDIDOS_PIX: 19,
+    VALORES_PIX: 20,
+    PEDIDOS_CARTAO_CREDITO: 21,
+    VALORES_CARTAO_CREDITO: 22,
+    PEDIDOS_BOLETO: 23,
+    VALORES_BOLETO: 24,
+    
+    // Status dos Pedidos
+    PEDIDOS_ATRASADOS: 25,
+    PEDIDOS_A_LIBERAR: 26,
+    PEDIDOS_FATURADOS_MES: 27,
+    PEDIDOS_EXPEDIDOS_MES: 28,
+    PEDIDOS_ENVIO_ATRASO: 29,
+    PEDIDOS_ENVIO_PRAZO: 30,
+    
+    // Comportamento de Compra
+    PRIMEIRA_COMPRA: 31,
+    RECOMPRA: 32,
+    TEMPO_MEDIO_TOTAL: 33,
+    
+    // Regiões
+    REGIAO_CENTRO_OESTE: 34,
+    REGIAO_NORDESTE: 35,
+    REGIAO_NORTE: 36,
+    REGIAO_SUDESTE: 37,
+    REGIAO_SUL: 38,
+    
+    // Tipo de Cliente
+    PEDIDOS_FRANQUIAS: 39,
+    PEDIDOS_MATRIZ: 40
 };
 
 // VARIÁVEIS GLOBAIS
@@ -60,6 +89,11 @@ function formatCurrency(value) {
 function formatNumber(value) {
     if (!value) value = 0;
     return new Intl.NumberFormat('pt-BR').format(value);
+}
+
+function formatPercent(value) {
+    if (!value) value = 0;
+    return value.toFixed(1) + '%';
 }
 
 function parseValue(value) {
@@ -86,9 +120,9 @@ function getCurrentFilters() {
     };
 }
 
-// CARREGAR DADOS DO GOOGLE SHEETS
+// CARREGAR DADOS DA NOVA ABA
 async function fetchSheetData() {
-    console.log('📡 Conectando ao Google Sheets...');
+    console.log('📡 Conectando ao Google Sheets (BDADOS DASH)...');
     
     try {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
@@ -113,14 +147,8 @@ async function fetchSheetData() {
         HEADERS = data.values[0];
         allData = data.values.slice(1);
         
-        console.log(`✅ Dados carregados: ${allData.length} registros`);
+        console.log(`✅ Dados carregados: ${allData.length} registros da BDADOS DASH`);
         console.log('📋 Cabeçalhos:', HEADERS);
-        
-        // DEBUG: Mostrar primeiras linhas
-        console.log('🔍 Primeiras 3 linhas de dados:');
-        for (let i = 0; i < Math.min(3, allData.length); i++) {
-            console.log(`Linha ${i + 1}:`, allData[i]);
-        }
         
         return true;
         
@@ -130,121 +158,136 @@ async function fetchSheetData() {
     }
 }
 
-// FILTRAR DADOS
-function filterData(data, filters) {
-    const filtered = data.filter(row => {
-        const mesRow = row[COLS.MES] || '';
-        const matchesMes = mesRow === filters.mesAno;
-        
-        let matchesLinha = true;
-        if (filters.linha !== 'todas') {
-            const linhaRow = row[COLS.LINHA] || '';
-            matchesLinha = linhaRow.includes(filters.linha);
-        }
-        
-        return matchesMes && matchesLinha;
-    });
+// ENCONTRAR DADOS PARA OS FILTROS ATUAIS
+function findDataForFilters(filters) {
+    const mesNumero = filters.mes.padStart(2, '0'); // Garantir 2 dígitos
+    const ano = filters.ano;
     
-    console.log(`📊 Filtro: ${filters.mesAno} + ${filters.linha} = ${filtered.length} registros`);
-    return filtered;
-}
-
-// CALCULAR KPIs COM DADOS REAIS
-function calculateKPIs() {
-    try {
-        const filters = getCurrentFilters();
-        const filteredData = filterData(allData, filters);
-        
-        console.log(`📈 Calculando KPIs para ${filteredData.length} registros...`);
-        
-        // VALOR EM VENDAS (apenas pedidos expedidos)
-        const valorVendas = filteredData
-            .filter(row => row[COLS.EXPEDIDO_EM] && row[COLS.EXPEDIDO_EM].trim() !== '')
-            .reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO] || 0), 0);
-        
-        // PEDIDOS EM ATRASO (tem dead line mas não expedido)
-        const pedidosAtraso = filteredData.filter(row => 
-            row[COLS.DEAD_LINE] && 
-            row[COLS.DEAD_LINE].trim() !== '' && 
-            (!row[COLS.EXPEDIDO_EM] || row[COLS.EXPEDIDO_EM].trim() === '')
-        ).length;
-        
-        // PEDIDOS À LIBERAR (status específico)
-        const pedidosLiberar = filteredData.filter(row => {
-            const status = (row[COLS.STATUS_PEDIDO] || '').toString().toLowerCase();
-            return status.includes('aguardando') || status.includes('liberar');
-        }).length;
-        
-        // PEDIDOS EXPEDIDOS
-        const pedidosExpedidos = filteredData.filter(row => 
-            row[COLS.EXPEDIDO_EM] && row[COLS.EXPEDIDO_EM].trim() !== ''
-        ).length;
-        
-        console.log('📊 Resultados dos cálculos:', {
-            valorVendas,
-            pedidosAtraso,
-            pedidosLiberar,
-            pedidosExpedidos
+    console.log(`🔍 Buscando dados: Ano=${ano}, Mês=${mesNumero}, Linha=${filters.linha}`);
+    
+    // Primeiro, tentar encontrar linha específica
+    if (filters.linha !== 'todas') {
+        const specificRow = allData.find(row => {
+            const rowAno = String(row[COLS.ANO] || '').trim();
+            const rowMes = String(row[COLS.MES] || '').trim();
+            const rowLinha = String(row[COLS.LINHA] || '').trim();
+            
+            return rowAno === ano && rowMes === mesNumero && rowLinha === filters.linha;
         });
         
+        if (specificRow) {
+            console.log(`✅ Encontrado dados específicos para ${filters.linha}`);
+            return specificRow;
+        }
+    }
+    
+    // Se não encontrou específico ou é "todas", somar todas as linhas do mês
+    const monthRows = allData.filter(row => {
+        const rowAno = String(row[COLS.ANO] || '').trim();
+        const rowMes = String(row[COLS.MES] || '').trim();
+        return rowAno === ano && rowMes === mesNumero;
+    });
+    
+    if (monthRows.length > 0) {
+        console.log(`✅ Encontrado ${monthRows.length} registros para o mês (consolidado)`);
+        
+        // Criar objeto consolidado somando todas as linhas
+        const consolidated = new Array(COLS.PEDIDOS_MATRIZ + 1).fill(0);
+        
+        monthRows.forEach(row => {
+            for (let i = 3; i <= COLS.PEDIDOS_MATRIZ; i++) { // A partir das metas
+                if (row[i]) {
+                    consolidated[i] += parseValue(row[i]);
+                }
+            }
+        });
+        
+        // Manter ano, mês e linha do primeiro registro (ou vazio)
+        consolidated[COLS.ANO] = ano;
+        consolidated[COLS.MES] = mesNumero;
+        consolidated[COLS.LINHA] = 'Consolidado';
+        
+        return consolidated;
+    }
+    
+    console.log('❌ Nenhum dado encontrado para os filtros');
+    return null;
+}
+
+// CALCULAR KPIs COM DADOS CONSOLIDADOS
+function calculateKPIs(currentRow) {
+    if (!currentRow) {
+        console.log('⚠️ Sem dados para calcular KPIs');
+        return getEmptyKPIs();
+    }
+    
+    try {
+        console.log('📈 Calculando KPIs com dados consolidados...');
+        
         return {
-            metaMes: 150000, // Temporário - depois integramos com metas
-            metaDia: 5000,   // Temporário
-            valorVendas,
-            pedidosAtraso,
-            pedidosLiberar,
-            pedidosExpedidos
+            metaMes: parseValue(currentRow[COLS.META_MES]),
+            metaDia: parseValue(currentRow[COLS.META_DIARIA]),
+            valorVendas: parseValue(currentRow[COLS.VALOR_PEDIDOS]),
+            pedidosAtraso: parseValue(currentRow[COLS.PEDIDOS_ATRASADOS]),
+            pedidosLiberar: parseValue(currentRow[COLS.PEDIDOS_A_LIBERAR]),
+            pedidosExpedidos: parseValue(currentRow[COLS.PEDIDOS_EXPEDIDOS_MES]),
+            porcentagemMeta: parseValue(currentRow[COLS.PORCENTAGEM_META]),
+            qtdePedidos: parseValue(currentRow[COLS.QTDE_PEDIDOS]),
+            taxaConversao: parseValue(currentRow[COLS.TAXA_CONVERSAO_PEDIDOS])
         };
         
     } catch (error) {
         console.error('❌ Erro ao calcular KPIs:', error);
-        return {
-            metaMes: 150000,
-            metaDia: 5000,
-            valorVendas: 0,
-            pedidosAtraso: 0,
-            pedidosLiberar: 0,
-            pedidosExpedidos: 0
-        };
+        return getEmptyKPIs();
     }
 }
 
-// CALCULAR DADOS DAS FRANQUIAS
-function calculateFranquiaData(franquiaNome) {
+function getEmptyKPIs() {
+    return {
+        metaMes: 0,
+        metaDia: 0,
+        valorVendas: 0,
+        pedidosAtraso: 0,
+        pedidosLiberar: 0,
+        pedidosExpedidos: 0,
+        porcentagemMeta: 0,
+        qtdePedidos: 0,
+        taxaConversao: 0
+    };
+}
+
+// CALCULAR DADOS DA FRANQUIA ESPECÍFICA
+function getFranquiaData(franquiaNome) {
     try {
         const filters = getCurrentFilters();
-        const allFiltered = filterData(allData, filters);
+        const mesNumero = filters.mes.padStart(2, '0');
+        const ano = filters.ano;
         
-        // Filtrar pela franquia específica
-        const filtered = allFiltered.filter(row => {
-            const linhaRow = row[COLS.LINHA] || '';
-            return linhaRow.includes(franquiaNome);
+        // Buscar linha específica da franquia
+        const franquiaRow = allData.find(row => {
+            const rowAno = String(row[COLS.ANO] || '').trim();
+            const rowMes = String(row[COLS.MES] || '').trim();
+            const rowLinha = String(row[COLS.LINHA] || '').trim();
+            
+            return rowAno === ano && rowMes === mesNumero && rowLinha === franquiaNome;
         });
         
-        console.log(`🏪 ${franquiaNome}: ${filtered.length} registros`);
+        if (franquiaRow) {
+            return {
+                qtdOrc: parseValue(franquiaRow[COLS.QTDE_ORCAMENTOS]),
+                valOrc: parseValue(franquiaRow[COLS.VALOR_ORCAMENTOS]),
+                qtdPed: parseValue(franquiaRow[COLS.QTDE_PEDIDOS]),
+                valPed: parseValue(franquiaRow[COLS.VALOR_PEDIDOS]),
+                ticket: parseValue(franquiaRow[COLS.TICKET_MEDIO_PEDIDOS]),
+                conversao: parseValue(franquiaRow[COLS.TAXA_CONVERSAO_PEDIDOS])
+            };
+        }
         
-        // Orçamentos (Enxoval ou não expedidos)
-        const orcamentos = filtered.filter(row => {
-            const tipo = row[COLS.ENXOVAL_REPOS] || '';
-            return tipo.includes('Enxoval') || !row[COLS.EXPEDIDO_EM] || row[COLS.EXPEDIDO_EM].trim() === '';
-        });
-        
-        // Pedidos (expedidos)
-        const pedidos = filtered.filter(row => 
-            row[COLS.EXPEDIDO_EM] && row[COLS.EXPEDIDO_EM].trim() !== ''
-        );
-        
-        const qtdOrc = orcamentos.length;
-        const valOrc = orcamentos.reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO] || 0), 0);
-        const qtdPed = pedidos.length;
-        const valPed = pedidos.reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO] || 0), 0);
-        const ticket = qtdPed > 0 ? valPed / qtdPed : 0;
-        const conversao = qtdOrc > 0 ? (qtdPed / qtdOrc) * 100 : 0;
-        
-        return { qtdOrc, valOrc, qtdPed, valPed, ticket, conversao };
+        console.log(`⚠️ Dados não encontrados para franquia: ${franquiaNome}`);
+        return { qtdOrc: 0, valOrc: 0, qtdPed: 0, valPed: 0, ticket: 0, conversao: 0 };
         
     } catch (error) {
-        console.error(`❌ Erro ao calcular dados da franquia ${franquiaNome}:`, error);
+        console.error(`❌ Erro ao buscar dados da franquia ${franquiaNome}:`, error);
         return { qtdOrc: 0, valOrc: 0, qtdPed: 0, valPed: 0, ticket: 0, conversao: 0 };
     }
 }
@@ -260,7 +303,8 @@ function updateKPIs(kpis, filters) {
         document.getElementById('pedidosExpedidos').textContent = formatNumber(kpis.pedidosExpedidos);
         document.getElementById('mesRef').textContent = filters.mesAno;
         
-        console.log('✅ KPIs atualizados com dados reais');
+        console.log('✅ KPIs atualizados com dados consolidados');
+        
     } catch (error) {
         console.error('❌ Erro ao atualizar KPIs:', error);
     }
@@ -278,26 +322,143 @@ function updateFranquias() {
     
     franquias.forEach(franq => {
         try {
-            const data = calculateFranquiaData(franq.nome);
+            const data = getFranquiaData(franq.nome);
             
             document.getElementById(`${franq.codigo}-qtd-orc`).textContent = formatNumber(data.qtdOrc);
             document.getElementById(`${franq.codigo}-val-orc`).textContent = formatCurrency(data.valOrc);
             document.getElementById(`${franq.codigo}-qtd-ped`).textContent = formatNumber(data.qtdPed);
             document.getElementById(`${franq.codigo}-val-ped`).textContent = formatCurrency(data.valPed);
             document.getElementById(`${franq.codigo}-ticket`).textContent = formatCurrency(data.ticket);
-            document.getElementById(`${franq.codigo}-conversao`).textContent = data.conversao.toFixed(1) + '%';
+            document.getElementById(`${franq.codigo}-conversao`).textContent = formatPercent(data.conversao);
             document.getElementById(`${franq.codigo}-conversao-bar`).style.width = Math.min(data.conversao, 100) + '%';
             
             console.log(`✅ ${franq.nome}: ${data.qtdPed} pedidos, R$ ${data.valPed}`);
+            
         } catch (error) {
             console.error(`❌ Erro ao atualizar ${franq.codigo}:`, error);
         }
     });
 }
 
+// CRIAR GRÁFICOS SIMPLIFICADOS
+function createCharts(currentRow) {
+    if (!currentRow) return;
+    
+    try {
+        createPagamentoChart(currentRow);
+        createRegiaoChart(currentRow);
+        createCompraChart(currentRow);
+    } catch (error) {
+        console.error('❌ Erro ao criar gráficos:', error);
+    }
+}
+
+function createPagamentoChart(data) {
+    const ctx = document.getElementById('pagamentoChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    const pagamentos = [
+        { forma: 'PIX', valor: parseValue(data[COLS.VALORES_PIX]) },
+        { forma: 'Cartão Crédito', valor: parseValue(data[COLS.VALORES_CARTAO_CREDITO]) },
+        { forma: 'Boleto', valor: parseValue(data[COLS.VALORES_BOLETO]) }
+    ].filter(p => p.valor > 0);
+    
+    if (window.pagamentoChart) window.pagamentoChart.destroy();
+    
+    if (pagamentos.length > 0) {
+        window.pagamentoChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: pagamentos.map(p => p.forma),
+                datasets: [{
+                    data: pagamentos.map(p => p.valor),
+                    backgroundColor: ['#22c55e', '#3b82f6', '#8b5cf6']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.label}: ${formatCurrency(context.parsed)}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function createRegiaoChart(data) {
+    const ctx = document.getElementById('regiaoChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    const regioes = [
+        { regiao: 'Centro-Oeste', pedidos: parseValue(data[COLS.REGIAO_CENTRO_OESTE]) },
+        { regiao: 'Nordeste', pedidos: parseValue(data[COLS.REGIAO_NORDESTE]) },
+        { regiao: 'Norte', pedidos: parseValue(data[COLS.REGIAO_NORTE]) },
+        { regiao: 'Sudeste', pedidos: parseValue(data[COLS.REGIAO_SUDESTE]) },
+        { regiao: 'Sul', pedidos: parseValue(data[COLS.REGIAO_SUL]) }
+    ].filter(r => r.pedidos > 0);
+    
+    if (window.regiaoChart) window.regiaoChart.destroy();
+    
+    if (regioes.length > 0) {
+        window.regiaoChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: regioes.map(r => r.regiao),
+                datasets: [{
+                    label: 'Pedidos',
+                    data: regioes.map(r => r.pedidos),
+                    backgroundColor: '#8b5cf6'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+}
+
+function createCompraChart(data) {
+    const ctx = document.getElementById('compraChart')?.getContext('2d');
+    if (!ctx) return;
+    
+    const compras = [
+        { tipo: 'Primeira Compra', valor: parseValue(data[COLS.PRIMEIRA_COMPRA]) },
+        { tipo: 'Recompra', valor: parseValue(data[COLS.RECOMPRA]) }
+    ].filter(c => c.valor > 0);
+    
+    if (window.compraChart) window.compraChart.destroy();
+    
+    if (compras.length > 0) {
+        window.compraChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: compras.map(c => c.tipo),
+                datasets: [{
+                    data: compras.map(c => c.valor),
+                    backgroundColor: ['#22c55e', '#3b82f6']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+}
+
 // FUNÇÃO PRINCIPAL
 async function updateDashboard() {
-    console.log('🎯 Atualizando dashboard...');
+    console.log('🎯 Atualizando dashboard com dados consolidados...');
     
     const loading = document.getElementById('loading');
     if (loading) loading.style.display = 'flex';
@@ -305,11 +466,11 @@ async function updateDashboard() {
     try {
         // Carregar dados se necessário
         if (allData.length === 0) {
-            console.log('📥 Buscando dados do Google Sheets...');
+            console.log('📥 Buscando dados da BDADOS DASH...');
             const success = await fetchSheetData();
             
             if (!success) {
-                console.log('🔄 Falha ao carregar dados reais');
+                console.log('🔄 Falha ao carregar dados consolidados');
                 return;
             }
         }
@@ -317,14 +478,20 @@ async function updateDashboard() {
         const filters = getCurrentFilters();
         console.log('🎛️ Filtros aplicados:', filters);
         
-        // Calcular KPIs com dados reais
-        const kpis = calculateKPIs();
+        // Encontrar dados para os filtros
+        const currentRow = findDataForFilters(filters);
+        
+        // Calcular KPIs
+        const kpis = calculateKPIs(currentRow);
         updateKPIs(kpis, filters);
         
         // Atualizar franquias
         updateFranquias();
         
-        console.log('✅ Dashboard atualizado com dados REAIS!');
+        // Criar gráficos
+        createCharts(currentRow);
+        
+        console.log('✅ Dashboard atualizado com dados consolidados!');
         
     } catch (error) {
         console.error('❌ Erro no dashboard:', error);
@@ -339,7 +506,7 @@ async function updateDashboard() {
 
 // INICIALIZAÇÃO
 function initializeDashboard() {
-    console.log('🚀 Inicializando Dashboard Policryl...');
+    console.log('🚀 Inicializando Dashboard Policryl (BDADOS DASH)...');
     
     try {
         // Configurar data atual
@@ -368,4 +535,4 @@ function initializeDashboard() {
 // INICIAR QUANDO A PÁGINA CARREGAR
 document.addEventListener('DOMContentLoaded', initializeDashboard);
 
-console.log('🔧 Dashboard Policryl - Script carregado e pronto');
+console.log('🔧 Dashboard Policryl - Script para BDADOS DASH carregado');
