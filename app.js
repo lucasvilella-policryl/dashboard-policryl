@@ -120,7 +120,7 @@ function findDataForFilters(filters) {
     };
 }
 
-// GRÁFICO DE HISTÓRICO COM ZEROS PARA DADOS FALTANTES
+// GRÁFICO DE HISTÓRICO CORRIGIDO - APENAS META FUNCIONA
 function createHistoricoChart() {
     const ctx = document.getElementById('historicoChart');
     if (!ctx) {
@@ -144,49 +144,69 @@ function createHistoricoChart() {
             return rowAno === anoAtual && rowMes === mesNumero;
         });
         
-        // Calcular totais do mês - SE NÃO TIVER DADOS, COLOCAR 0
+        // Calcular totais do mês
         const metaMes = dadosMes.reduce((total, row) => total + parseValue(row[COLS.META_MES]), 0);
-        const valorPedidos = dadosMes.reduce((total, row) => total + parseValue(row[COLS.VALOR_PEDIDOS]), 0);
+        
+        // DEBUG: Verificar quais dados estão disponíveis
+        console.log(`📊 ${mesNome}/${anoAtual}:`, {
+            totalRegistros: dadosMes.length,
+            metaMes: metaMes,
+            temValorPedidos: dadosMes.some(row => row[COLS.VALOR_PEDIDOS] && parseValue(row[COLS.VALOR_PEDIDOS]) > 0),
+            temQtdePedidos: dadosMes.some(row => row[COLS.QTDE_PEDIDOS] && parseValue(row[COLS.QTDE_PEDIDOS]) > 0)
+        });
+        
+        // VERIFICAR SE EXISTEM DADOS DE VENDAS (VALOR_PEDIDOS)
+        let valorVendas = 0;
+        dadosMes.forEach(row => {
+            const valor = parseValue(row[COLS.VALOR_PEDIDOS]);
+            if (valor > 0) {
+                console.log(`💰 Venda encontrada em ${mesNome}:`, valor);
+                valorVendas += valor;
+            }
+        });
         
         return {
             mes: mesNome,
-            orcamentos: 0, // SEM DADOS DE ORÇAMENTOS NA PLANILHA
-            vendas: valorPedidos, // USAR VALOR REAL OU 0
-            meta: metaMes // USAR META REAL OU 0
+            orcamentos: 0, // NÃO TEM DADOS DE ORÇAMENTOS NA PLANILHA
+            vendas: valorVendas, // USAR VALOR REAL DE VENDAS
+            meta: metaMes // USAR META REAL
         };
     });
     
-    console.log('📊 Dados reais para histórico:', dadosReais);
+    console.log('📈 Dados finais para histórico:', dadosReais);
     
     const historicoData = {
         labels: meses,
         datasets: [
             {
                 label: 'Orçamentos',
-                data: dadosReais.map(d => d.orcamentos), // SEMPRE 0
+                data: dadosReais.map(d => d.orcamentos), // SEMPRE 0 (não tem dados)
                 borderColor: '#3b82f6',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 borderWidth: 3,
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 4
             },
             {
                 label: 'Vendas',
-                data: dadosReais.map(d => d.vendas), // DADOS REAIS OU 0
+                data: dadosReais.map(d => d.vendas), // DADOS REAIS DE VENDAS
                 borderColor: '#22c55e',
                 backgroundColor: 'rgba(34, 197, 94, 0.1)',
                 borderWidth: 3,
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 4
             },
             {
                 label: 'Meta',
-                data: dadosReais.map(d => d.meta), // DADOS REAIS OU 0
+                data: dadosReais.map(d => d.meta), // DADOS REAIS DE META
                 borderColor: '#ef4444',
                 borderWidth: 2,
                 borderDash: [5, 5],
                 fill: false,
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 4
             }
         ]
     };
@@ -203,6 +223,9 @@ function createHistoricoChart() {
                     labels: { color: '#e2e8f0' }
                 },
                 tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#f1f5f9',
+                    bodyColor: '#cbd5e1',
                     callbacks: {
                         label: function(context) {
                             return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
@@ -217,6 +240,7 @@ function createHistoricoChart() {
                     ticks: { 
                         color: '#94a3b8',
                         callback: function(value) {
+                            if (value === 0) return 'R$ 0';
                             return 'R$ ' + (value / 1000).toFixed(0) + 'K';
                         }
                     }
@@ -225,6 +249,10 @@ function createHistoricoChart() {
                     grid: { display: false },
                     ticks: { color: '#94a3b8' }
                 }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });
