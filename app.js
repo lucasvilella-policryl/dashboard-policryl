@@ -1,12 +1,11 @@
 // DASHBOARD POLICRYL — BDADOS DASH via CSV (robusto, com normalização de filtros)
-// -------------------------------------------------------------
+// - KPIs 'Pedidos em Atraso' e 'Pedidos à Liberar' somam o ANO inteiro (ignoram MÊS)
 
 // === URL do CSV publicado da aba BDADOS DASH ===
-// (o seu link publicado)
 const CSV_URL_DASH =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKstKflONSWvQ6xfVkMdM53mveopLXVGNv9CyQT0kRbjdI7IGIVzvvMPLSXNyQ-xZTQEvDmKr1jI_I/pub?gid=1199309873&single=true&output=csv';
 
-// ==== MAPEAMENTO DAS COLUNAS (igual ao BDADOS DASH atualizado) ====
+// ==== MAPEAMENTO DAS COLUNAS (cabeçalho atualizado) ====
 const COLS = {
   ANO:0, MES:1, LINHA:2,
   META_MES:3, META_DIARIA:4, PORCENTAGEM_META:5,
@@ -54,7 +53,7 @@ function normalizarMes(m){
   return '01';
 }
 
-// normaliza strings para comparação (tira acento/caixa/espaços extras)
+// normaliza strings para comparação (sem acento/caixa/espaços)
 const norm = (s) => String(s ?? '')
   .normalize('NFD').replace(/\p{Diacritic}/gu, '')
   .trim().toLowerCase();
@@ -218,7 +217,7 @@ function createCompraChart(){
   });
 }
 
-// ==================== Update (com fallback de snapshot) ====================
+// ==================== Update (com regra anual p/ atraso/liberar) ====================
 async function updateDashboard(opts = {}){
   const { forceReload = false } = opts;
   const loading = document.getElementById('loading');
@@ -232,12 +231,25 @@ async function updateDashboard(opts = {}){
     const filters = getCurrentFilters();
     const row = findDataForFilters(filters);
 
+    // --- Totais anuais (ignorando MÊS) para Atraso / A Liberar ---
+    const anoSel   = filters.ano;
+    const linhaSel = filters.linha; // 'todas' ou nome
+    const rowsAno = allData.filter(r => {
+      const a = String(r[COLS.ANO] || '').trim();
+      const linOK = (norm(linhaSel) === 'todas') || (norm(r[COLS.LINHA]) === norm(linhaSel));
+      return a === anoSel && linOK; // NÃO filtra por mês
+    });
+
+    const totalAtrasoAno  = rowsAno.reduce((s,r)=> s + parseValue(r[COLS.PEDIDOS_ATRASADOS] ?? 0), 0);
+    const totalLiberarAno = rowsAno.reduce((s,r)=> s + parseValue(r[COLS.PEDIDOS_A_LIBERAR] ?? 0), 0);
+
+    // --- KPIs (mês para meta/vendas/expedidos; ano para atraso/liberar) ---
     const kpis = {
-      metaMes: row ? parseValue(row[COLS.META_MES]) : 0,
-      metaDia: row ? parseValue(row[COLS.META_DIARIA]) : 0,
-      valorVendas: row ? parseValue(row[COLS.VALOR_PEDIDOS]) : 0,
-      pedidosAtraso: row ? parseValue(row[COLS.PEDIDOS_ATRASADOS]) : 0,
-      pedidosLiberar: row ? parseValue(row[COLS.PEDIDOS_A_LIBERAR]) : 0,
+      metaMes:          row ? parseValue(row[COLS.META_MES]) : 0,
+      metaDia:          row ? parseValue(row[COLS.META_DIARIA]) : 0,
+      valorVendas:      row ? parseValue(row[COLS.VALOR_PEDIDOS]) : 0,
+      pedidosAtraso:    totalAtrasoAno,
+      pedidosLiberar:   totalLiberarAno,
       pedidosExpedidos: row ? parseValue(row[COLS.PEDIDOS_EXPEDIDOS_MES]) : 0
     };
 
@@ -296,7 +308,7 @@ async function updateDashboard(opts = {}){
     createCompraChart();
   }catch(e){
     console.error('❌ Erro updateDashboard:', e);
-    // fallback: mantém o snapshot anterior (não zera a tela)
+    // fallback: mantém snapshot anterior (não zera a tela)
     if (prev.length){
       allData = prev;
       createHistoricoChart();
