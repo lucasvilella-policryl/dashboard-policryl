@@ -3,6 +3,7 @@ const PT3_TO_MM = {
   'JAN':'01','FEV':'02','MAR':'03','ABR':'04','MAI':'05','JUN':'06',
   'JUL':'07','AGO':'08','SET':'09','OUT':'10','NOV':'11','DEZ':'12'
 };
+
 function normMesToken(x){
   if (!x) return null;
   const s = String(x).trim().toUpperCase();
@@ -11,39 +12,46 @@ function normMesToken(x){
   if (!isNaN(n) && n>=1 && n<=12) return String(n).padStart(2,'0');
   return null;
 }
+
 function toNumberBR(v){
   if (v == null || v === '') return 0;
   if (typeof v === 'number') return v;
   return parseFloat(String(v).replace(/[R$\s.]/g,'').replace(',', '.')) || 0;
 }
 
-let METAS_CACHE = []; // cache em memória
+let METAS_CACHE = [];
 
 async function fetchMetas(){
-  const sheetId = (typeof CONFIG !== 'undefined' && CONFIG.SHEET_ID) ? CONFIG.SHEET_ID : '%SHEET_ID%';
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('BDADOS METAS' )}&range=A:E`;
-  const res = await fetch(url);
-  if(!res.ok) throw new Error('Erro METAS: HTTP ' + res.status);
-  const txt = await res.text();
-  const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
-  const cols = json.table.cols.length;
-  const values = (json.table.rows || []).map(r => {
-    const arr = new Array(cols).fill('');
-    (r.c || []).forEach((cell, i) => { arr[i] = cell ? (cell.v ?? '') : ''; });
-    return arr;
-  });
-  METAS_CACHE = values.map(r => ({
-    ano: String(r[0] ?? '').trim(),
-    mes: normMesToken(r[1]),
-    linha: String(r[2] ?? '').trim(),
-    metaMes: toNumberBR(r[3]),
-    metaDia: toNumberBR(r[4]),
-  })).filter(m => m.ano && m.mes);
-  return METAS_CACHE;
+  try {
+    const sheetId = '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM';
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('BDADOS METAS')}&range=A:E`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('Erro METAS: HTTP ' + res.status);
+    const txt = await res.text();
+    const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
+    const cols = json.table.cols.length;
+    const values = (json.table.rows || []).map(r => {
+      const arr = new Array(cols).fill('');
+      (r.c || []).forEach((cell, i) => { arr[i] = cell ? (cell.v ?? '') : ''; });
+      return arr;
+    });
+    METAS_CACHE = values.map(r => ({
+      ano: String(r[0] ?? '').trim(),
+      mes: normMesToken(r[1]),
+      linha: String(r[2] ?? '').trim(),
+      metaMes: toNumberBR(r[3]),
+      metaDia: toNumberBR(r[4]),
+    })).filter(m => m.ano && m.mes);
+    console.log('✅ Metas carregadas:', METAS_CACHE.length);
+    return METAS_CACHE;
+  } catch (error) {
+    console.error('❌ Erro ao carregar metas:', error);
+    return [];
+  }
 }
 
 function resolveMetasFor(filters){
-  const mm = filters.mes; // '01'..'12'
+  const mm = filters.mes;
   const yy = String(filters.ano);
   const linha = (filters.linha && filters.linha !== 'todas') ? filters.linha : null;
   const isSameMonth = (m) => (m.ano === yy && m.mes === mm);
@@ -60,55 +68,28 @@ function resolveMetasFor(filters){
 }
 // === [END INJECTED] ==========================================================
 
-// Configuração do Google Sheets
 const CONFIG = {
     SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
-    // API_KEY não é mais necessária com a abordagem GVIZ
+    API_KEY: 'AIzaSyDBRuUuQZoLWaT4VSPuiPHGt0J4iviWR2g',
     SHEET_NAME: 'PEDIDOS GERAL',
     RANGE: 'A:AE'
 };
 
-// Mapeamento de colunas (baseado na sua planilha)
 const COLS = {
-    MES: 0,              // A - MÊS
-    NUM_OMIE: 1,         // B - Nº Omie
-    NUM_VIRTUAL: 2,      // C - Nº L. Virtual
-    LINHA: 3,            // D - Linha
-    MATRIZ_FRANQ: 4,     // E - Matriz ou Franquia?
-    ATENDIMENTO: 5,      // F - Atendimento por
-    CNPJ_CPF: 6,         // G - CNPJ / CPF
-    ESTADO: 7,           // H - Estado
-    REGIAO: 8,           // I - Região Geográfica
-    FORMA_PGTO: 9,       // J - Forma de Pagamento
-    VALOR_PEDIDO: 10,    // K - Valor do Pedido
-    ENXOVAL_REPOS: 11,   // L - Enxoval ou Repos.?
-    DATA_INCLUSAO: 12,   // M - Data da Inclusão
-    ENTRADA_PROD: 13,    // N - Entrad. Produção
-    EMBALADO_EM: 14,     // O - Embalado em
-    ENTRADA_FAT: 15,     // P - Entr. Faturamento
-    NUM_NF: 16,          // Q - Nº Nota Fiscal
-    FATURADO_EM: 17,     // R - Faturado em
-    ENTRADA_EXP: 18,     // S - Entr. Expedição
-    EXPEDIDO_EM: 19,     // T - Expedido em
-    TRANSPORTADORA: 20,  // U - Transportadora
-    DEAD_LINE: 21,       // V - Dead Line
-    STATUS_PEDIDO: 22,   // W - Status do Pedido
-    DURACAO: 23,         // X - Duração do Pedido
-    SITUACAO: 24,        // Y - Situação do Pedido
-    SITUACAO_CONCLUSAO: 25, // Z - Situação da Conclusão
-    MES_PEDIDO: 26,      // AA - Mês do Pedido
-    SEMANA_PEDIDO: 27,   // AB - Semana do Pedido
-    MES_DEADLINE: 28,    // AC - Mês do Dead Line
-    SEMANA_DEADLINE: 29, // AD - Semana do Dead Line
-    MES_FATURAMENTO: 30, // AE - Mês do Faturamento
+    MES: 0, NUM_OMIE: 1, NUM_VIRTUAL: 2, LINHA: 3, MATRIZ_FRANQ: 4,
+    ATENDIMENTO: 5, CNPJ_CPF: 6, ESTADO: 7, REGIAO: 8, FORMA_PGTO: 9,
+    VALOR_PEDIDO: 10, ENXOVAL_REPOS: 11, DATA_INCLUSAO: 12, ENTRADA_PROD: 13,
+    EMBALADO_EM: 14, ENTRADA_FAT: 15, NUM_NF: 16, FATURADO_EM: 17,
+    ENTRADA_EXP: 18, EXPEDIDO_EM: 19, TRANSPORTADORA: 20, DEAD_LINE: 21,
+    STATUS_PEDIDO: 22, DURACAO: 23, SITUACAO: 24, SITUACAO_CONCLUSAO: 25,
+    MES_PEDIDO: 26, SEMANA_PEDIDO: 27, MES_DEADLINE: 28, SEMANA_DEADLINE: 29,
+    MES_FATURAMENTO: 30
 };
 
-// Variáveis globais
 let allData = [];
 let HEADERS = [];
-let historicoChart, pagamentoChart, regiaoChart, distribuicaoChart;
+let historicoChart, pagamentoChart, regiaoChart, compraChartInstance;
 
-// Dinâmico: encontrar índice de coluna pelo título do cabeçalho
 function getColIndexByTitle(name){
     if (!HEADERS || HEADERS.length === 0) return -1;
     const target = String(name).trim().toLowerCase();
@@ -118,7 +99,6 @@ function getColIndexByTitle(name){
     }
     return -1;
 }
-// ==================== FUNÇÕES DE UTILIDADE ====================
 
 function formatCurrency(value) {
     return new Intl.NumberFormat('pt-BR', {
@@ -135,7 +115,6 @@ function formatNumber(value) {
 function parseValue(value) {
     if (!value) return 0;
     if (typeof value === 'number') return value;
-    
     const cleaned = value.toString().replace(/[R$\s.]/g, '').replace(',', '.');
     return parseFloat(cleaned) || 0;
 }
@@ -159,54 +138,31 @@ function getCurrentFilters() {
     };
 }
 
-// ==================== BUSCAR DADOS DO SHEETS (MODIFICADO) ====================
-
 async function fetchSheetData() {
-    const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME )}&range=${CONFIG.RANGE}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
     
     try {
         const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
         
-        const text = await response.text();
-        // Extrai o JSON de uma resposta JSONP
-        const jsonString = text.substring(text.indexOf('(') + 1, text.lastIndexOf(')'));
-        const data = JSON.parse(jsonString);
-
-        if (!data.table || !data.table.rows || data.table.rows.length === 0) {
+        if (!data.values || data.values.length === 0) {
             throw new Error('Nenhum dado encontrado na planilha');
         }
-
-        // Extrai os cabeçalhos das colunas
-        HEADERS = data.table.cols.map(col => col.label || '');
         
-        // Converte as linhas para o formato de array que o resto do código espera
-        allData = data.table.rows.map(row => {
-            // Garante que a linha e a célula existam antes de mapear
-            if (!row || !row.c) return []; 
-            return row.c.map(cell => (cell ? cell.v : null));
-        });
-
-        console.log(`✅ ${allData.length} registros carregados via GVIZ`);
+        HEADERS = data.values[0] || [];
+        allData = data.values.slice(1);
+        console.log(`✅ ${allData.length} registros carregados`);
         
         return allData;
     } catch (error) {
-        console.error('❌ Erro ao buscar dados via GVIZ:', error);
-        // Tenta extrair uma mensagem de erro mais clara da resposta
-        if (error.message.includes('JSON')) {
-             console.error("A resposta da planilha pode não ser um JSON válido ou está mal formatada.");
-        }
+        console.error('❌ Erro ao buscar dados:', error);
         throw error;
     }
 }
 
-// ==================== PROCESSAMENTO DE DADOS ====================
-
 function filterData(data, filters) {
     return data.filter(row => {
-        if (!row || row.length === 0) return false; // Adiciona verificação para linhas nulas ou vazias
         const mesRow = row[COLS.MES] || '';
         if (mesRow !== filters.mesAno) return false;
         
@@ -219,29 +175,29 @@ function filterData(data, filters) {
     });
 }
 
-
 function calculateKPIs(data, filters){
   const f = filterData(data, filters);
   const metas = resolveMetasFor(filters);
 
-  const valorVendas   = f.reduce((s,r)=> s + (r[COLS.EXPEDIDO_EM] ? toNumberBR(r[COLS.VALOR_PEDIDO]) : 0), 0);
-  const pedidosAtraso = f.filter(r=> r[COLS.DEAD_LINE] && !r[COLS.EXPEDIDO_EM]).length;
-  const pedidosLiberar= f.filter(r=> ((r[COLS.STATUS_PEDIDO]||'')+'').match(/Aguardando|Liberar/i)).length;
-  const pedidosExped  = f.filter(r=> r[COLS.EXPEDIDO_EM]).length;
+  const valorVendas = f.reduce((s,r) => s + (r[COLS.EXPEDIDO_EM] ? toNumberBR(r[COLS.VALOR_PEDIDO]) : 0), 0);
+  const pedidosAtraso = f.filter(r => r[COLS.DEAD_LINE] && !r[COLS.EXPEDIDO_EM]).length;
+  const pedidosLiberar = f.filter(r => ((r[COLS.STATUS_PEDIDO]||'')+'').match(/Aguardando|Liberar/i)).length;
+  const pedidosExped = f.filter(r => r[COLS.EXPEDIDO_EM]).length;
 
   return {
     metaMes: metas.metaMes,
     metaDia: metas.metaDia,
-    valorVendas, pedidosAtraso, pedidosLiberar, pedidosExpedidos: pedidosExped
+    valorVendas, 
+    pedidosAtraso, 
+    pedidosLiberar, 
+    pedidosExpedidos: pedidosExped
   };
 }
 
 function calculateFranquiaData(data, filters, franquiaNome) {
     const filtered = data.filter(row => {
-        if (!row || row.length === 0) return false;
         const mesRow = row[COLS.MES] || '';
         const linhaRow = row[COLS.LINHA] || '';
-        
         return mesRow === filters.mesAno && linhaRow.includes(franquiaNome);
     });
     
@@ -260,14 +216,7 @@ function calculateFranquiaData(data, filters, franquiaNome) {
     const ticket = qtdPed > 0 ? valPed / qtdPed : 0;
     const conversao = qtdOrc > 0 ? (qtdPed / qtdOrc) * 100 : 0;
     
-    return {
-        qtdOrc,
-        valOrc,
-        qtdPed,
-        valPed,
-        ticket,
-        conversao
-    };
+    return { qtdOrc, valOrc, qtdPed, valPed, ticket, conversao };
 }
 
 function calculateHistoricoAnual(data, ano) {
@@ -277,15 +226,17 @@ function calculateHistoricoAnual(data, ano) {
         const mesAno = mesNome + '/' + ano;
         const rows = data.filter(r => (r[COLS.MES] || '') === mesAno);
         
-        const orcamentos = rows.filter(r => !r[COLS.EXPEDIDO_EM])
-            .reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
+        const orcamentos = rows
+            .filter(row => !row[COLS.EXPEDIDO_EM])
+            .reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO]), 0);
         
-        const vendas = rows.filter(r => r[COLS.EXPEDIDO_EM])
-            .reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDO]), 0);
+        const vendas = rows
+            .filter(row => row[COLS.EXPEDIDO_EM])
+            .reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO]), 0);
         
         const mm = String(idx + 1).padStart(2, '0');
         const metasMes = METAS_CACHE.filter(m => m.ano === String(ano) && m.mes === mm);
-        const meta = metasMes.reduce((s, m) => s + (m.metaMes || 0), 0);
+        const meta = metasMes.reduce((sum, m) => sum + (m.metaMes || 0), 0);
         
         return { mes: mesNome, orcamentos, vendas, meta };
     });
@@ -296,7 +247,6 @@ function calculatePagamentos(data, filters) {
     const pagamentos = {};
     
     filtered.forEach(row => {
-        if (!row) return;
         const forma = row[COLS.FORMA_PGTO] || 'Não informado';
         pagamentos[forma] = (pagamentos[forma] || 0) + 1;
     });
@@ -314,7 +264,6 @@ function calculateRegioes(data, filters) {
     const regioes = {};
     
     filtered.forEach(row => {
-        if (!row) return;
         const regiao = row[COLS.REGIAO] || 'Não informado';
         regioes[regiao] = (regioes[regiao] || 0) + 1;
     });
@@ -324,8 +273,6 @@ function calculateRegioes(data, filters) {
         pedidos: regioes[regiao]
     }));
 }
-
-// ==================== ATUALIZAÇÃO DA UI ====================
 
 function updateKPIs(kpis, filters) {
     document.getElementById('metaMes').textContent = formatCurrency(kpis.metaMes);
@@ -355,17 +302,14 @@ function updateAllFranquias(data, filters) {
     updateFranquia('bc', 'Brasil Cacau', data, filters);
     updateFranquia('pb', 'PolyBee', data, filters);
     updateFranquia('id', 'Industries', data, filters);
+    updateFranquia('skd', 'Skullderia', data, filters);
 }
-
-// ==================== GRÁFICOS ====================
 
 function createHistoricoChart(data, ano) {
     const ctx = document.getElementById('historicoChart').getContext('2d');
     const historicoData = calculateHistoricoAnual(data, ano);
     
-    if (historicoChart) {
-        historicoChart.destroy();
-    }
+    if (historicoChart) historicoChart.destroy();
 
     historicoChart = new Chart(ctx, {
         type: 'line',
@@ -379,12 +323,7 @@ function createHistoricoChart(data, ano) {
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.4,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: '#3b82f6',
-                    pointBorderColor: '#1e40af',
-                    pointBorderWidth: 2
+                    tension: 0.4
                 },
                 {
                     label: 'Vendas',
@@ -393,12 +332,7 @@ function createHistoricoChart(data, ano) {
                     backgroundColor: 'rgba(34, 197, 94, 0.1)',
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.4,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: '#22c55e',
-                    pointBorderColor: '#16a34a',
-                    pointBorderWidth: 2
+                    tension: 0.4
                 },
                 {
                     label: 'Meta',
@@ -407,12 +341,7 @@ function createHistoricoChart(data, ano) {
                     borderWidth: 2,
                     borderDash: [5, 5],
                     fill: false,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#ef4444',
-                    pointBorderColor: '#dc2626',
-                    pointBorderWidth: 2
+                    tension: 0.4
                 }
             ]
         },
@@ -420,25 +349,8 @@ function createHistoricoChart(data, ano) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        color: '#e2e8f0',
-                        font: { size: 13, weight: '600' },
-                        padding: 15,
-                        usePointStyle: true,
-                        pointStyle: 'circle'
-                    }
-                },
+                legend: { position: 'top' },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#f1f5f9',
-                    bodyColor: '#cbd5e1',
-                    borderColor: '#8b5cf6',
-                    borderWidth: 1,
-                    padding: 12,
-                    displayColors: true,
                     callbacks: {
                         label: function(context) {
                             return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
@@ -449,32 +361,12 @@ function createHistoricoChart(data, ano) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: {
-                        color: 'rgba(148, 163, 184, 0.1)',
-                        drawBorder: false
-                    },
                     ticks: {
-                        color: '#94a3b8',
-                        font: { size: 11 },
                         callback: function(value) {
                             return 'R$ ' + (value / 1000).toFixed(0) + 'K';
                         }
                     }
-                },
-                x: {
-                    grid: {
-                        display: false,
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        font: { size: 11, weight: '600' }
-                    }
                 }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
             }
         }
     });
@@ -484,9 +376,7 @@ function createPagamentoChart(data, filters) {
     const ctx = document.getElementById('pagamentoChart').getContext('2d');
     const pagamentos = calculatePagamentos(data, filters);
     
-    if (pagamentoChart) {
-        pagamentoChart.destroy();
-    }
+    if (pagamentoChart) pagamentoChart.destroy();
 
     pagamentoChart = new Chart(ctx, {
         type: 'doughnut',
@@ -494,38 +384,17 @@ function createPagamentoChart(data, filters) {
             labels: pagamentos.map(p => p.forma),
             datasets: [{
                 data: pagamentos.map(p => p.valor),
-                backgroundColor: [
-                    '#8b5cf6',
-                    '#3b82f6',
-                    '#22c55e',
-                    '#f59e0b',
-                    '#ef4444'
-                ],
+                backgroundColor: ['#8b5cf6', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444'],
                 borderColor: '#1e293b',
-                borderWidth: 3,
-                hoverOffset: 10
+                borderWidth: 3
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        color: '#e2e8f0',
-                        font: { size: 12 },
-                        padding: 15,
-                        usePointStyle: true
-                    }
-                },
+                legend: { position: 'bottom' },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#f1f5f9',
-                    bodyColor: '#cbd5e1',
-                    borderColor: '#8b5cf6',
-                    borderWidth: 1,
-                    padding: 12,
                     callbacks: {
                         label: function(context) {
                             return context.label + ': ' + context.parsed.toFixed(1) + '%';
@@ -542,9 +411,7 @@ function createRegiaoChart(data, filters) {
     const ctx = document.getElementById('regiaoChart').getContext('2d');
     const regioes = calculateRegioes(data, filters);
     
-    if (regiaoChart) {
-        regiaoChart.destroy();
-    }
+    if (regiaoChart) regiaoChart.destroy();
 
     regiaoChart = new Chart(ctx, {
         type: 'bar',
@@ -553,77 +420,28 @@ function createRegiaoChart(data, filters) {
             datasets: [{
                 label: 'Pedidos',
                 data: regioes.map(r => r.pedidos),
-                backgroundColor: [
-                    'rgba(139, 92, 246, 0.8)',
-                    'rgba(59, 130, 246, 0.8)',
-                    'rgba(34, 197, 94, 0.8)',
-                    'rgba(245, 158, 11, 0.8)',
-                    'rgba(239, 68, 68, 0.8)'
-                ],
-                borderColor: [
-                    '#8b5cf6',
-                    '#3b82f6',
-                    '#22c55e',
-                    '#f59e0b',
-                    '#ef4444'
-                ],
+                backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                borderColor: '#8b5cf6',
                 borderWidth: 2,
-                borderRadius: 8,
-                barThickness: 40
+                borderRadius: 8
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#f1f5f9',
-                    bodyColor: '#cbd5e1',
-                    borderColor: '#8b5cf6',
-                    borderWidth: 1,
-                    padding: 12
-                }
-            },
+            plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(148, 163, 184, 0.1)',
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        font: { size: 11 }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false,
-                        drawBorder: false
-                    },
-                    ticks: {
-                        color: '#94a3b8',
-                        font: { size: 11, weight: '600' }
-                    }
-                }
+                y: { beginAtZero: true }
             }
         }
     });
 }
 
-
 function createCompraChart(data, filters){
-    // tenta localizar coluna "Compra" no cabeçalho
     const colCompra = getColIndexByTitle('Compra');
-    const canvas = document.getElementById('compraChart') || document.getElementById('distribuicaoChart');
-    if (!canvas){
-        console.warn('Canvas de Compra não encontrado (compraChart/distribuicaoChart).');
-        return;
-    }
+    const canvas = document.getElementById('compraChart');
+    if (!canvas) return;
+    
     const ctx = canvas.getContext('2d');
     const f = filterData(data, filters);
 
@@ -636,16 +454,11 @@ function createCompraChart(data, filters){
             else if (v.includes('recompra')) counts['Recompra']++;
             else counts['Outros']++;
         });
-    } else {
-        console.warn('Coluna "Compra" não encontrada no cabeçalho. Mantendo 0.');
     }
 
-    // CORREÇÃO: Use a variável global correta
-    if (window.compraChartInstance) {
-        window.compraChartInstance.destroy();
-    }
+    if (compraChartInstance) compraChartInstance.destroy();
 
-    window.compraChartInstance = new Chart(ctx, {
+    compraChartInstance = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: Object.keys(counts),
@@ -660,10 +473,7 @@ function createCompraChart(data, filters){
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { color: '#e2e8f0', usePointStyle: true }
-                },
+                legend: { position: 'bottom' },
                 tooltip: {
                     callbacks: {
                         label: (context) => ` ${context.label}: ${context.parsed} pedidos`
@@ -673,15 +483,16 @@ function createCompraChart(data, filters){
         }
     });
 }
-// ==================== FUNÇÃO PRINCIPAL ====================
 
 async function updateDashboard() {
     const loading = document.getElementById('loading');
     loading.style.display = 'flex';
 
     try {
-        // Busca os dados das duas planilhas
-        await Promise.all([fetchSheetData(), fetchMetas()]);
+        if (allData.length === 0) {
+            await fetchSheetData();
+            if (METAS_CACHE.length === 0) await fetchMetas();
+        }
         
         const filters = getCurrentFilters();
         console.log('📊 Filtros aplicados:', filters);
@@ -708,8 +519,6 @@ async function updateDashboard() {
     }
 }
 
-// ==================== INICIALIZAÇÃO ====================
-
 function setCurrentDate() {
     const now = new Date();
     const year = now.getFullYear();
@@ -722,8 +531,9 @@ function setCurrentDate() {
 function startAutoRefresh() {
     setInterval(() => {
         console.log('🔄 Auto-refresh: recarregando dados...');
+        allData = [];
         updateDashboard();
-    }, 300000); // 5 minutos
+    }, 300000);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
