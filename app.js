@@ -1,11 +1,21 @@
 // ---------------- CONFIG ----------------
+// Planilha principal (ABA: PEDIDOS GERAL) publicada na web:
+const PUB = {
+  // Esse é o ID "d/e/..." da URL publicada
+  PUB_ID: '2PACX-1vQKstKflONSWvQ6xfVkMdM53mveopLXVGNv9CyQT0kRbjdI7IGIVzvvMPLSXNyQ-xZTQEvDmKr1jI_I',
+  GID_PEDIDOS: '1297882001',   // gid da aba PEDIDOS GERAL (do link que você enviou)
+  // (Opcional) Se você publicar também a aba de metas, preencha aqui:
+  GID_METAS: ''               // ex.: '123456789'
+};
+
+// Caso queira manter também o acesso por ID da planilha (não-publicada), deixe aqui:
 const CONFIG = {
   SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
   SHEET_NAME: 'PEDIDOS GERAL',
-  RANGE: 'A:AO' // até Qtde. de Itens
+  RANGE: 'A:AO'
 };
 
-// Índices do NOVO CABEÇALHO (41 colunas: A..AO => 0..40)
+// Índices do NOVO CABEÇALHO (A..AO => 0..40)
 const COLS = {
   ANO:0, MES:1, NUM_OMIE:2, NUM_LVIRT:3, LINHA:4, MATRIZ_FRANQ:5, ATENDIMENTO:6, CNPJ_CPF:7, ESTADO:8,
   REGIAO_BR:9, FORMA_PGTO:10, VALOR_PEDIDO:11, ENXOVAL_REPOS:12, DATA_INCLUSAO:13, ENTRADA_PROD:14,
@@ -25,24 +35,54 @@ function normMesToken(x){ if(!x) return null; const s=String(x).trim().toUpperCa
 function formatCurrency(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0); }
 function formatNumber(v){ return new Intl.NumberFormat('pt-BR').format(v||0); }
 function parseValue(v){ if(v==null||v==='')return 0; if(typeof v==='number') return v; return parseFloat(String(v).replace(/[R$\s.]/g,'').replace(',', '.'))||0; }
+function csvToArray(text){
+  // Simples parser de CSV (planilha publicada output=csv)
+  const lines = text.split(/\r?\n/).filter(l=>l.length>0);
+  return lines.map(line => {
+    const cells = [];
+    let cur='', inside=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='\"'){
+        if(inside && line[i+1]==='\"'){ cur+='\"'; i++; }
+        else inside = !inside;
+      } else if(ch===',' && !inside){ cells.push(cur); cur=''; }
+      else cur+=ch;
+    }
+    cells.push(cur);
+    return cells;
+  });
+}
 
-// ---------- Fetch principal via GVIZ (sem API key) ----------
+// ---------- Fetch principal (preferir publicação CSV; fallback gviz) ----------
 async function fetchSheetData(){
+  // 1) Tentar CSV publicado
+  try{
+    const urlCSV = `https://docs.google.com/spreadsheets/d/e/${PUB.PUB_ID}/pub?gid=${PUB.GID_PEDIDOS}&single=true&output=csv`;
+    const res = await fetch(urlCSV, {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status+' CSV principal');
+    const txt = await res.text();
+    const rows = csvToArray(txt);
+    HEADERS = rows[0] || [];
+    allData = rows.slice(1);
+    console.log('Dados carregados via CSV publicado', HEADERS.length, allData.length);
+    return allData;
+  }catch(e){
+    console.warn('CSV publicado falhou, tentando GVIZ...', e);
+  }
+  // 2) Fallback GVIZ (requer planilha com acesso "Qualquer um com o link")
   const id = CONFIG.SHEET_ID;
   const sheet = encodeURIComponent(CONFIG.SHEET_NAME);
   const range = CONFIG.RANGE || 'A:AO';
   const url = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json&sheet=${sheet}&range=${range}`;
-
   const res = await fetch(url);
-  if(!res.ok) throw new Error('HTTP ' + res.status + ' ao buscar dados principais');
+  if(!res.ok) throw new Error('HTTP ' + res.status + ' ao buscar dados principais GVIZ');
   const txt = await res.text();
-
   const json = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}')+1));
   HEADERS = (json.table.cols || []).map(c => (c && c.label) ? c.label : '');
   const cols = json.table.cols.length;
-  const rows = json.table.rows || [];
-
-  allData = rows.map(r => {
+  const jrows = json.table.rows || [];
+  allData = jrows.map(r => {
     const arr = new Array(cols).fill('');
     (r.c || []).forEach((cell, i) => { arr[i] = cell ? (cell.v ?? '') : ''; });
     return arr;
@@ -50,9 +90,32 @@ async function fetchSheetData(){
   return allData;
 }
 
-// ---------- Metas (aba BDADOS METAS) ----------
+// ---------- Metas (preferir publicação CSV se GID_METAS fornecido; fallback GVIZ) ----------
 let METAS_CACHE = [];
 async function fetchMetas(){
+  // 1) CSV publicado (se você publicar a aba de metas e preencher PUB.GID_METAS)
+  if (PUB.GID_METAS){
+    try{
+      const urlCSV = `https://docs.google.com/spreadsheets/d/e/${PUB.PUB_ID}/pub?gid=${PUB.GID_METAS}&single=true&output=csv`;
+      const res = await fetch(urlCSV, {cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP '+res.status+' CSV metas');
+      const txt = await res.text();
+      const rows = csvToArray(txt);
+      const idx = {Ano:0, Mes:1, Linha:2, Meta_Mes:3, Meta_Diaria:4}; // cabeçalho esperado
+      METAS_CACHE = rows.slice(1).map(r => ({
+        ano: String(r[idx.Ano] ?? '').trim(),
+        mes: normMesToken(r[idx.Mes]),
+        linha: String(r[idx.Linha] ?? '').trim(),
+        metaMes: parseValue(r[idx.Meta_Mes]),
+        metaDia: parseValue(r[idx.Meta_Diaria])
+      })).filter(m => m.ano && m.mes);
+      console.log('Metas via CSV publicado', METAS_CACHE.length);
+      return METAS_CACHE;
+    }catch(e){
+      console.warn('CSV metas falhou, tentando GVIZ...', e);
+    }
+  }
+  // 2) GVIZ fallback (requer visibilidade "Qualquer um com o link")
   const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('BDADOS METAS')}&range=A:E`;
   const res = await fetch(url);
   if(!res.ok) throw new Error('Erro METAS: HTTP ' + res.status);
@@ -71,6 +134,7 @@ async function fetchMetas(){
     metaMes: parseValue(r[3]),
     metaDia: parseValue(r[4]),
   })).filter(m => m.ano && m.mes);
+  console.log('Metas via GVIZ', METAS_CACHE.length);
   return METAS_CACHE;
 }
 
@@ -119,13 +183,8 @@ function calculateKPIs(data, filters){
   const pedidosLiberar= f.filter(r=> ((r[COLS.STATUS_PED]||'')+'').match(/Aguardando|Liberar/i)).length;
   const pedidosExped  = f.filter(r=> r[COLS.EXPEDIDO_EM]).length;
 
-  return {
-    metaMes: metas.metaMes,
-    metaDia: metas.metaDia,
-    valorVendas, pedidosAtraso, pedidosLiberar, pedidosExpedidos: pedidosExped
-  };
+  return { metaMes: metas.metaMes, metaDia: metas.metaDia, valorVendas, pedidosAtraso, pedidosLiberar, pedidosExpedidos: pedidosExped };
 }
-
 function updateKPIs(k, f){
   document.getElementById('metaMes').textContent = formatCurrency(k.metaMes);
   document.getElementById('metaDia').textContent = formatCurrency(k.metaDia);
@@ -253,6 +312,5 @@ window.addEventListener('DOMContentLoaded', ()=>{
   populateYearOptions();
   setCurrentMonth();
   updateDashboard();
-  // auto refresh a cada 5 min
   setInterval(()=>{ allData=[]; updateDashboard(); }, 300000);
 });
