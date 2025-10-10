@@ -1,5 +1,5 @@
-// DASHBOARD POLICRYL — BDADOS DASH via CSV (robusto, com normalização de filtros)
-// - KPIs 'Pedidos em Atraso' e 'Pedidos à Liberar' somam o ANO inteiro (ignoram MÊS)
+// DASHBOARD POLICRYL — BDADOS DASH via CSV (robusto, filtros normalizados)
+// KPIs 'Pedidos em Atraso' e 'Pedidos à Liberar' agora somam TODA a base (ignoram ANO e MÊS)
 
 // === URL do CSV publicado da aba BDADOS DASH ===
 const CSV_URL_DASH =
@@ -217,7 +217,7 @@ function createCompraChart(){
   });
 }
 
-// ==================== Update (com regra anual p/ atraso/liberar) ====================
+// ==================== Update (Atraso/ALiberar = TOTAL base) ====================
 async function updateDashboard(opts = {}){
   const { forceReload = false } = opts;
   const loading = document.getElementById('loading');
@@ -231,25 +231,23 @@ async function updateDashboard(opts = {}){
     const filters = getCurrentFilters();
     const row = findDataForFilters(filters);
 
-    // --- Totais anuais (ignorando MÊS) para Atraso / A Liberar ---
-    const anoSel   = filters.ano;
+    // --- Totais GERAIS (ignora ANO e MÊS) para Atraso / A Liberar ---
     const linhaSel = filters.linha; // 'todas' ou nome
-    const rowsAno = allData.filter(r => {
-      const a = String(r[COLS.ANO] || '').trim();
+    const rowsGeral = allData.filter(r => {
       const linOK = (norm(linhaSel) === 'todas') || (norm(r[COLS.LINHA]) === norm(linhaSel));
-      return a === anoSel && linOK; // NÃO filtra por mês
+      return linOK; // NÃO filtra por ano nem por mês
     });
 
-    const totalAtrasoAno  = rowsAno.reduce((s,r)=> s + parseValue(r[COLS.PEDIDOS_ATRASADOS] ?? 0), 0);
-    const totalLiberarAno = rowsAno.reduce((s,r)=> s + parseValue(r[COLS.PEDIDOS_A_LIBERAR] ?? 0), 0);
+    const totalAtrasoGeral  = rowsGeral.reduce((s,r)=> s + parseValue(r[COLS.PEDIDOS_ATRASADOS] ?? 0), 0);
+    const totalLiberarGeral = rowsGeral.reduce((s,r)=> s + parseValue(r[COLS.PEDIDOS_A_LIBERAR] ?? 0), 0);
 
-    // --- KPIs (mês para meta/vendas/expedidos; ano para atraso/liberar) ---
+    // --- KPIs: mês para meta/vendas/expedidos; GERAL para atraso/liberar ---
     const kpis = {
       metaMes:          row ? parseValue(row[COLS.META_MES]) : 0,
       metaDia:          row ? parseValue(row[COLS.META_DIARIA]) : 0,
       valorVendas:      row ? parseValue(row[COLS.VALOR_PEDIDOS]) : 0,
-      pedidosAtraso:    totalAtrasoAno,
-      pedidosLiberar:   totalLiberarAno,
+      pedidosAtraso:    totalAtrasoGeral,
+      pedidosLiberar:   totalLiberarGeral,
       pedidosExpedidos: row ? parseValue(row[COLS.PEDIDOS_EXPEDIDOS_MES]) : 0
     };
 
