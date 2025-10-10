@@ -3,10 +3,45 @@ const CONFIG = {
     SHEET_ID: '1ow6XhPjmZIu9v8SimIrq6ZihAZENn2ene5BoT37K7qM',
     API_KEY: 'AIzaSyDBRuUuQZoLWaT4VSPuiPHGt0J4iviWR2g',
     SHEET_NAME: 'PEDIDOS GERAL',
-    RANGE: 'A:Z'
+    RANGE: 'A:AE'
 };
 
 console.log('🔥 Dashboard Policryl - Carregando...');
+
+// MAPEAMENTO DE COLUNAS BASEADO NA SUA PLANILHA
+const COLS = {
+    MES: 0,              // A - MÊS
+    NUM_OMIE: 1,         // B - Nº Omie
+    NUM_VIRTUAL: 2,      // C - Nº L. Virtual
+    LINHA: 3,            // D - Linha
+    MATRIZ_FRANQ: 4,     // E - Matriz ou Franquia?
+    ATENDIMENTO: 5,      // F - Atendimento por
+    CNPJ_CPF: 6,         // G - CNPJ / CPF
+    ESTADO: 7,           // H - Estado
+    REGIAO: 8,           // I - Região Geográfica
+    FORMA_PGTO: 9,       // J - Forma de Pagamento
+    VALOR_PEDIDO: 10,    // K - Valor do Pedido
+    ENXOVAL_REPOS: 11,   // L - Enxoval ou Repos.?
+    DATA_INCLUSAO: 12,   // M - Data da Inclusão
+    ENTRADA_PROD: 13,    // N - Entrad. Produção
+    EMBALADO_EM: 14,     // O - Embalado em
+    ENTRADA_FAT: 15,     // P - Entr. Faturamento
+    NUM_NF: 16,          // Q - Nº Nota Fiscal
+    FATURADO_EM: 17,     // R - Faturado em
+    ENTRADA_EXP: 18,     // S - Entr. Expedição
+    EXPEDIDO_EM: 19,     // T - Expedido em
+    TRANSPORTADORA: 20,  // U - Transportadora
+    DEAD_LINE: 21,       // V - Dead Line
+    STATUS_PEDIDO: 22,   // W - Status do Pedido
+    DURACAO: 23,         // X - Duração do Pedido
+    SITUACAO: 24,        // Y - Situação do Pedido
+    SITUACAO_CONCLUSAO: 25, // Z - Situação da Conclusão
+    MES_PEDIDO: 26,      // AA - Mês do Pedido
+    SEMANA_PEDIDO: 27,   // AB - Semana do Pedido
+    MES_DEADLINE: 28,    // AC - Mês do Dead Line
+    SEMANA_DEADLINE: 29, // AD - Semana do Dead Line
+    MES_FATURAMENTO: 30  // AE - Mês do Faturamento
+};
 
 // VARIÁVEIS GLOBAIS
 let allData = [];
@@ -58,6 +93,7 @@ async function fetchSheetData() {
     try {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!${CONFIG.RANGE}?key=${CONFIG.API_KEY}`;
         
+        console.log('🔗 URL:', url);
         const response = await fetch(url);
         
         if (!response.ok) {
@@ -78,7 +114,13 @@ async function fetchSheetData() {
         allData = data.values.slice(1);
         
         console.log(`✅ Dados carregados: ${allData.length} registros`);
-        console.log('📋 Colunas disponíveis:', HEADERS);
+        console.log('📋 Cabeçalhos:', HEADERS);
+        
+        // DEBUG: Mostrar primeiras linhas
+        console.log('🔍 Primeiras 3 linhas de dados:');
+        for (let i = 0; i < Math.min(3, allData.length); i++) {
+            console.log(`Linha ${i + 1}:`, allData[i]);
+        }
         
         return true;
         
@@ -88,36 +130,70 @@ async function fetchSheetData() {
     }
 }
 
+// FILTRAR DADOS
+function filterData(data, filters) {
+    const filtered = data.filter(row => {
+        const mesRow = row[COLS.MES] || '';
+        const matchesMes = mesRow === filters.mesAno;
+        
+        let matchesLinha = true;
+        if (filters.linha !== 'todas') {
+            const linhaRow = row[COLS.LINHA] || '';
+            matchesLinha = linhaRow.includes(filters.linha);
+        }
+        
+        return matchesMes && matchesLinha;
+    });
+    
+    console.log(`📊 Filtro: ${filters.mesAno} + ${filters.linha} = ${filtered.length} registros`);
+    return filtered;
+}
+
 // CALCULAR KPIs COM DADOS REAIS
 function calculateKPIs() {
     try {
         const filters = getCurrentFilters();
-        const filteredData = allData.filter(row => {
-            const mesRow = row[0] || ''; // Coluna A - MÊS
-            return mesRow === filters.mesAno;
-        });
+        const filteredData = filterData(allData, filters);
         
-        console.log(`📊 ${filteredData.length} registros para ${filters.mesAno}`);
+        console.log(`📈 Calculando KPIs para ${filteredData.length} registros...`);
         
-        // Cálculos básicos (adaptar conforme suas colunas)
-        const valorVendas = filteredData.reduce((sum, row) => {
-            // Coluna K - Valor do Pedido (índice 10)
-            return sum + parseValue(row[10] || 0);
-        }, 0);
+        // VALOR EM VENDAS (apenas pedidos expedidos)
+        const valorVendas = filteredData
+            .filter(row => row[COLS.EXPEDIDO_EM] && row[COLS.EXPEDIDO_EM].trim() !== '')
+            .reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO] || 0), 0);
         
-        const pedidosExpedidos = filteredData.filter(row => {
-            // Coluna T - Expedido em (índice 19)
-            return row[19] && row[19].trim() !== '';
+        // PEDIDOS EM ATRASO (tem dead line mas não expedido)
+        const pedidosAtraso = filteredData.filter(row => 
+            row[COLS.DEAD_LINE] && 
+            row[COLS.DEAD_LINE].trim() !== '' && 
+            (!row[COLS.EXPEDIDO_EM] || row[COLS.EXPEDIDO_EM].trim() === '')
+        ).length;
+        
+        // PEDIDOS À LIBERAR (status específico)
+        const pedidosLiberar = filteredData.filter(row => {
+            const status = (row[COLS.STATUS_PEDIDO] || '').toString().toLowerCase();
+            return status.includes('aguardando') || status.includes('liberar');
         }).length;
         
-        // Dados de exemplo - substituir por cálculos reais
+        // PEDIDOS EXPEDIDOS
+        const pedidosExpedidos = filteredData.filter(row => 
+            row[COLS.EXPEDIDO_EM] && row[COLS.EXPEDIDO_EM].trim() !== ''
+        ).length;
+        
+        console.log('📊 Resultados dos cálculos:', {
+            valorVendas,
+            pedidosAtraso,
+            pedidosLiberar,
+            pedidosExpedidos
+        });
+        
         return {
-            metaMes: 150000,
-            metaDia: 5000,
-            valorVendas: valorVendas || 87500,
-            pedidosAtraso: 8,
-            pedidosLiberar: 15,
-            pedidosExpedidos: pedidosExpedidos || 42
+            metaMes: 150000, // Temporário - depois integramos com metas
+            metaDia: 5000,   // Temporário
+            valorVendas,
+            pedidosAtraso,
+            pedidosLiberar,
+            pedidosExpedidos
         };
         
     } catch (error) {
@@ -125,11 +201,51 @@ function calculateKPIs() {
         return {
             metaMes: 150000,
             metaDia: 5000,
-            valorVendas: 87500,
-            pedidosAtraso: 8,
-            pedidosLiberar: 15,
-            pedidosExpedidos: 42
+            valorVendas: 0,
+            pedidosAtraso: 0,
+            pedidosLiberar: 0,
+            pedidosExpedidos: 0
         };
+    }
+}
+
+// CALCULAR DADOS DAS FRANQUIAS
+function calculateFranquiaData(franquiaNome) {
+    try {
+        const filters = getCurrentFilters();
+        const allFiltered = filterData(allData, filters);
+        
+        // Filtrar pela franquia específica
+        const filtered = allFiltered.filter(row => {
+            const linhaRow = row[COLS.LINHA] || '';
+            return linhaRow.includes(franquiaNome);
+        });
+        
+        console.log(`🏪 ${franquiaNome}: ${filtered.length} registros`);
+        
+        // Orçamentos (Enxoval ou não expedidos)
+        const orcamentos = filtered.filter(row => {
+            const tipo = row[COLS.ENXOVAL_REPOS] || '';
+            return tipo.includes('Enxoval') || !row[COLS.EXPEDIDO_EM] || row[COLS.EXPEDIDO_EM].trim() === '';
+        });
+        
+        // Pedidos (expedidos)
+        const pedidos = filtered.filter(row => 
+            row[COLS.EXPEDIDO_EM] && row[COLS.EXPEDIDO_EM].trim() !== ''
+        );
+        
+        const qtdOrc = orcamentos.length;
+        const valOrc = orcamentos.reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO] || 0), 0);
+        const qtdPed = pedidos.length;
+        const valPed = pedidos.reduce((sum, row) => sum + parseValue(row[COLS.VALOR_PEDIDO] || 0), 0);
+        const ticket = qtdPed > 0 ? valPed / qtdPed : 0;
+        const conversao = qtdOrc > 0 ? (qtdPed / qtdOrc) * 100 : 0;
+        
+        return { qtdOrc, valOrc, qtdPed, valPed, ticket, conversao };
+        
+    } catch (error) {
+        console.error(`❌ Erro ao calcular dados da franquia ${franquiaNome}:`, error);
+        return { qtdOrc: 0, valOrc: 0, qtdPed: 0, valPed: 0, ticket: 0, conversao: 0 };
     }
 }
 
@@ -162,16 +278,19 @@ function updateFranquias() {
     
     franquias.forEach(franq => {
         try {
-            // Dados de exemplo - substituir por cálculos reais baseados na coluna LINHA
-            document.getElementById(`${franq.codigo}-qtd-orc`).textContent = '25';
-            document.getElementById(`${franq.codigo}-val-orc`).textContent = formatCurrency(25000);
-            document.getElementById(`${franq.codigo}-qtd-ped`).textContent = '15';
-            document.getElementById(`${franq.codigo}-val-ped`).textContent = formatCurrency(15000);
-            document.getElementById(`${franq.codigo}-ticket`).textContent = formatCurrency(1000);
-            document.getElementById(`${franq.codigo}-conversao`).textContent = '60%';
-            document.getElementById(`${franq.codigo}-conversao-bar`).style.width = '60%';
+            const data = calculateFranquiaData(franq.nome);
+            
+            document.getElementById(`${franq.codigo}-qtd-orc`).textContent = formatNumber(data.qtdOrc);
+            document.getElementById(`${franq.codigo}-val-orc`).textContent = formatCurrency(data.valOrc);
+            document.getElementById(`${franq.codigo}-qtd-ped`).textContent = formatNumber(data.qtdPed);
+            document.getElementById(`${franq.codigo}-val-ped`).textContent = formatCurrency(data.valPed);
+            document.getElementById(`${franq.codigo}-ticket`).textContent = formatCurrency(data.ticket);
+            document.getElementById(`${franq.codigo}-conversao`).textContent = data.conversao.toFixed(1) + '%';
+            document.getElementById(`${franq.codigo}-conversao-bar`).style.width = Math.min(data.conversao, 100) + '%';
+            
+            console.log(`✅ ${franq.nome}: ${data.qtdPed} pedidos, R$ ${data.valPed}`);
         } catch (error) {
-            console.warn(`⚠️ Elemento não encontrado para ${franq.codigo}`);
+            console.error(`❌ Erro ao atualizar ${franq.codigo}:`, error);
         }
     });
 }
@@ -190,7 +309,8 @@ async function updateDashboard() {
             const success = await fetchSheetData();
             
             if (!success) {
-                console.log('🔄 Usando dados de demonstração...');
+                console.log('🔄 Falha ao carregar dados reais');
+                return;
             }
         }
         
@@ -204,7 +324,7 @@ async function updateDashboard() {
         // Atualizar franquias
         updateFranquias();
         
-        console.log('✅ Dashboard atualizado com sucesso!');
+        console.log('✅ Dashboard atualizado com dados REAIS!');
         
     } catch (error) {
         console.error('❌ Erro no dashboard:', error);
@@ -245,22 +365,7 @@ function initializeDashboard() {
     }
 }
 
-// AUTO-REFRESH
-function startAutoRefresh() {
-    setInterval(() => {
-        console.log('🔄 Atualização automática...');
-        updateDashboard();
-    }, 150000); // 2 minutos e 30 segundos
-}
-
 // INICIAR QUANDO A PÁGINA CARREGAR
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeDashboard);
-} else {
-    initializeDashboard();
-}
+document.addEventListener('DOMContentLoaded', initializeDashboard);
 
-// Iniciar auto-refresh após 10 segundos
-setTimeout(startAutoRefresh, 10000);
-
-console.log('🔧 Dashboard Policryl - Script carregado');
+console.log('🔧 Dashboard Policryl - Script carregado e pronto');
