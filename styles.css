@@ -264,6 +264,10 @@ body {
     border-color: rgba(30, 144, 255, 0.6);
 }
 
+.franquia-card.sk {
+    border-color: rgba(138, 43, 226, 0.6);
+}
+
 .franquia-header {
     display: flex;
     align-items: center;
