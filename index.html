@@ -1,120 +1,225 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard Comercial - Policryl</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="styles.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Comercial - Policryl</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="loading" id="loading">
-    <div class="spinner"></div>
-    <div class="loading-text">Carregando dados do Google Sheets...</div>
-  </div>
-
-  <div class="container">
-    <div class="header">
-      <div class="logo-section">
-        <div class="logo">🔥</div>
-        <div class="title">
-          <h1>POLICRYL</h1>
-          <p>Dashboard Comercial em Tempo Real</p>
-        </div>
-      </div>
-      <div class="filters">
-        <div class="filter-group">
-          <label for="filterAno">ANO</label>
-          <select id="filterAno" onchange="updateDashboard()"></select>
-        </div>
-        <div class="filter-group">
-          <label for="filterMes">MÊS</label>
-          <select id="filterMes" onchange="updateDashboard()">
-            <option value="01">Janeiro</option>
-            <option value="02">Fevereiro</option>
-            <option value="03">Março</option>
-            <option value="04">Abril</option>
-            <option value="05">Maio</option>
-            <option value="06">Junho</option>
-            <option value="07">Julho</option>
-            <option value="08">Agosto</option>
-            <option value="09">Setembro</option>
-            <option value="10">Outubro</option>
-            <option value="11">Novembro</option>
-            <option value="12">Dezembro</option>
-          </select>
-        </div>
-        <div class="filter-group">
-          <label for="filterLinha">LINHA</label>
-          <select id="filterLinha" onchange="updateDashboard()">
-            <option value="todas">Todas</option>
-            <option>FRA - Brasil Cacau</option>
-            <option>FRA - Cacau Show</option>
-            <option>FRA - Kopenhagen</option>
-            <option>IND - Industries</option>
-            <option>PLB - PolyBee</option>
-            <option>SKD - Skullderia</option>
-          </select>
-        </div>
-      </div>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">Carregando dados do Google Sheets...</div>
     </div>
 
-    <div class="kpis-grid">
-      <div class="kpi-card primary">
-        <div class="kpi-label">Meta do Mês</div>
-        <div class="kpi-value" id="metaMes">R$ 0</div>
-        <div class="kpi-subtitle" id="mesRef"></div>
-      </div>
-      <div class="kpi-card primary">
-        <div class="kpi-label">Meta do Dia</div>
-        <div class="kpi-value" id="metaDia">R$ 0</div>
-        <div class="kpi-subtitle">Hoje</div>
-      </div>
-      <div class="kpi-card success">
-        <div class="kpi-label">Valor em Vendas</div>
-        <div class="kpi-value" id="valorVendas">R$ 0</div>
-        <div class="kpi-subtitle">Total faturado</div>
-      </div>
-      <div class="kpi-card danger">
-        <div class="kpi-label">Pedidos em Atraso</div>
-        <div class="kpi-value" id="pedidosAtraso">0</div>
-        <div class="kpi-subtitle">Atenção necessária</div>
-      </div>
-      <div class="kpi-card warning">
-        <div class="kpi-label">Pedidos à Liberar</div>
-        <div class="kpi-value" id="pedidosLiberar">0</div>
-        <div class="kpi-subtitle">Aguardando aprovação</div>
-      </div>
-      <div class="kpi-card success">
-        <div class="kpi-label">Pedidos Expedidos</div>
-        <div class="kpi-value" id="pedidosExpedidos">0</div>
-        <div class="kpi-subtitle">Entregues no mês</div>
-      </div>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-section">
+                <div class="logo">🔥</div>
+                <div class="title">
+                    <h1>POLICRYL</h1>
+                    <p>Dashboard Comercial em Tempo Real</p>
+                </div>
+            </div>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label>ANO</label>
+                    <select id="filterAno" onchange="updateDashboard()">
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>MÊS</label>
+                    <select id="filterMes" onchange="updateDashboard()">
+                        <option value="01">Janeiro</option>
+                        <option value="02">Fevereiro</option>
+                        <option value="03">Março</option>
+                        <option value="04">Abril</option>
+                        <option value="05">Maio</option>
+                        <option value="06">Junho</option>
+                        <option value="07">Julho</option>
+                        <option value="08">Agosto</option>
+                        <option value="09">Setembro</option>
+                        <option value="10" selected>Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>LINHA</label>
+                    <select id="filterLinha" onchange="updateDashboard()">
+                        <option value="todas">Todas</option>
+                        <option value="FRA - Brasil Cacau">FRA - Brasil Cacau</option>
+                        <option value="FRA - Cacau Show">FRA - Cacau Show</option>
+                        <option value="FRA - Kopenhagen">FRA - Kopenhagen</option>
+                        <option value="IND - Industries">IND - Industries</option>
+                        <option value="PLB - PolyBee">PLB - PolyBee</option>
+                        <option value="SKD - Skullderia">SKD - Skullderia</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpis-grid">
+            <div class="kpi-card primary">
+                <div class="kpi-label">Meta do Mês</div>
+                <div class="kpi-value" id="metaMes">R$ 0</div>
+                <div class="kpi-subtitle" id="mesRef">Outubro/2025</div>
+            </div>
+            <div class="kpi-card primary">
+                <div class="kpi-label">Meta do Dia</div>
+                <div class="kpi-value" id="metaDia">R$ 0</div>
+                <div class="kpi-subtitle">Hoje</div>
+            </div>
+            <div class="kpi-card success">
+                <div class="kpi-label">Valor em Vendas</div>
+                <div class="kpi-value" id="valorVendas">R$ 0</div>
+                <div class="kpi-subtitle">Total faturado</div>
+            </div>
+            <div class="kpi-card danger">
+                <div class="kpi-label">Pedidos em Atraso</div>
+                <div class="kpi-value" id="pedidosAtraso">0</div>
+                <div class="kpi-subtitle">Atenção necessária</div>
+            </div>
+            <div class="kpi-card warning">
+                <div class="kpi-label">Pedidos à Liberar</div>
+                <div class="kpi-value" id="pedidosLiberar">0</div>
+                <div class="kpi-subtitle">Aguardando aprovação</div>
+            </div>
+            <div class="kpi-card success">
+                <div class="kpi-label">Pedidos Expedidos</div>
+                <div class="kpi-value" id="pedidosExpedidos">0</div>
+                <div class="kpi-subtitle">Entregues no mês</div>
+            </div>
+        </div>
+
+        <!-- Histórico Mensal -->
+        <div class="historico-section">
+            <div class="historico-card">
+                <div class="chart-title">📈 Histórico Mensal - Orçamentos vs Vendas vs Meta</div>
+                <div class="historico-chart">
+                    <canvas id="historicoChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-title">💳 Valores por Forma de Pagamento</div>
+                <div class="chart-container">
+                    <canvas id="pagamentoChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">🗺️ Pedidos por Região</div>
+                <div class="chart-container">
+                    <canvas id="regiaoChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">🛒 Compra: Primeira vs Recompra</div>
+                <div class="chart-container">
+                    <canvas id="compraChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Franquias + SKD -->
+        <div class="franquias-grid">
+            <div class="franquia-card bc">
+                <div class="franquia-header"><div class="franquia-icon">BC</div><div class="franquia-name">Brasil Cacau</div></div>
+                <div class="franquia-metrics">
+                    <div class="metric-row"><span class="metric-label">Qtd. Orçamentos</span><span class="metric-value" id="bc-qtd-orc">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Orçamentos</span><span class="metric-value" id="bc-val-orc">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Qtd. Pedidos</span><span class="metric-value" id="bc-qtd-ped">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Pedidos</span><span class="metric-value highlight" id="bc-val-ped">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Ticket Médio</span><span class="metric-value" id="bc-ticket">R$ 0</span></div>
+                </div>
+                <div class="conversion-bar">
+                    <div class="conversion-label"><span class="metric-label">Taxa de Conversão</span><span class="metric-value" id="bc-conversao">0%</span></div>
+                    <div class="conversion-track"><div class="conversion-fill" id="bc-conversao-bar" style="width:0%"></div></div>
+                </div>
+            </div>
+            <div class="franquia-card cs">
+                <div class="franquia-header"><div class="franquia-icon">CS</div><div class="franquia-name">Cacau Show</div></div>
+                <div class="franquia-metrics">
+                    <div class="metric-row"><span class="metric-label">Qtd. Orçamentos</span><span class="metric-value" id="cs-qtd-orc">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Orçamentos</span><span class="metric-value" id="cs-val-orc">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Qtd. Pedidos</span><span class="metric-value" id="cs-qtd-ped">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Pedidos</span><span class="metric-value highlight" id="cs-val-ped">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Ticket Médio</span><span class="metric-value" id="cs-ticket">R$ 0</span></div>
+                </div>
+                <div class="conversion-bar">
+                    <div class="conversion-label"><span class="metric-label">Taxa de Conversão</span><span class="metric-value" id="cs-conversao">0%</span></div>
+                    <div class="conversion-track"><div class="conversion-fill" id="cs-conversao-bar" style="width:0%"></div></div>
+                </div>
+            </div>
+            <div class="franquia-card kp">
+                <div class="franquia-header"><div class="franquia-icon">KP</div><div class="franquia-name">Kopenhagen</div></div>
+                <div class="franquia-metrics">
+                    <div class="metric-row"><span class="metric-label">Qtd. Orçamentos</span><span class="metric-value" id="kp-qtd-orc">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Orçamentos</span><span class="metric-value" id="kp-val-orc">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Qtd. Pedidos</span><span class="metric-value" id="kp-qtd-ped">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Pedidos</span><span class="metric-value highlight" id="kp-val-ped">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Ticket Médio</span><span class="metric-value" id="kp-ticket">R$ 0</span></div>
+                </div>
+                <div class="conversion-bar">
+                    <div class="conversion-label"><span class="metric-label">Taxa de Conversão</span><span class="metric-value" id="kp-conversao">0%</span></div>
+                    <div class="conversion-track"><div class="conversion-fill" id="kp-conversao-bar" style="width:0%"></div></div>
+                </div>
+            </div>
+            <div class="franquia-card pb">
+                <div class="franquia-header"><div class="franquia-icon">PB</div><div class="franquia-name">PolyBee</div></div>
+                <div class="franquia-metrics">
+                    <div class="metric-row"><span class="metric-label">Qtd. Orçamentos</span><span class="metric-value" id="pb-qtd-orc">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Orçamentos</span><span class="metric-value" id="pb-val-orc">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Qtd. Pedidos</span><span class="metric-value" id="pb-qtd-ped">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Pedidos</span><span class="metric-value highlight" id="pb-val-ped">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Ticket Médio</span><span class="metric-value" id="pb-ticket">R$ 0</span></div>
+                </div>
+                <div class="conversion-bar">
+                    <div class="conversion-label"><span class="metric-label">Taxa de Conversão</span><span class="metric-value" id="pb-conversao">0%</span></div>
+                    <div class="conversion-track"><div class="conversion-fill" id="pb-conversao-bar" style="width:0%"></div></div>
+                </div>
+            </div>
+            <div class="franquia-card id">
+                <div class="franquia-header"><div class="franquia-icon">ID</div><div class="franquia-name">Industries</div></div>
+                <div class="franquia-metrics">
+                    <div class="metric-row"><span class="metric-label">Qtd. Orçamentos</span><span class="metric-value" id="id-qtd-orc">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Orçamentos</span><span class="metric-value" id="id-val-orc">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Qtd. Pedidos</span><span class="metric-value" id="id-qtd-ped">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Pedidos</span><span class="metric-value highlight" id="id-val-ped">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Ticket Médio</span><span class="metric-value" id="id-ticket">R$ 0</span></div>
+                </div>
+                <div class="conversion-bar">
+                    <div class="conversion-label"><span class="metric-label">Taxa de Conversão</span><span class="metric-value" id="id-conversao">0%</span></div>
+                    <div class="conversion-track"><div class="conversion-fill" id="id-conversao-bar" style="width:0%"></div></div>
+                </div>
+            </div>
+            <div class="franquia-card skd">
+                <div class="franquia-header"><div class="franquia-icon">SKD</div><div class="franquia-name">Skullderia</div></div>
+                <div class="franquia-metrics">
+                    <div class="metric-row"><span class="metric-label">Qtd. Orçamentos</span><span class="metric-value" id="skd-qtd-orc">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Orçamentos</span><span class="metric-value" id="skd-val-orc">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Qtd. Pedidos</span><span class="metric-value" id="skd-qtd-ped">0</span></div>
+                    <div class="metric-row"><span class="metric-label">Valor Pedidos</span><span class="metric-value highlight" id="skd-val-ped">R$ 0</span></div>
+                    <div class="metric-row"><span class="metric-label">Ticket Médio</span><span class="metric-value" id="skd-ticket">R$ 0</span></div>
+                </div>
+                <div class="conversion-bar">
+                    <div class="conversion-label"><span class="metric-label">Taxa de Conversão</span><span class="metric-value" id="skd-conversao">0%</span></div>
+                    <div class="conversion-track"><div class="conversion-fill" id="skd-conversao-bar" style="width:0%"></div></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="historico-section">
-      <div class="historico-card">
-        <div class="chart-title">📈 Histórico Mensal - Orçamentos vs Vendas vs Meta</div>
-        <div class="historico-chart"><canvas id="historicoChart"></canvas></div>
-      </div>
-    </div>
-
-    <div class="charts-row">
-      <div class="chart-card">
-        <div class="chart-title">💳 Valores por Forma de Pagamento</div>
-        <div class="chart-container"><canvas id="pagamentoChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">🗺️ Pedidos por Região</div>
-        <div class="chart-container"><canvas id="regiaoChart"></canvas></div>
-      </div>
-      <div class="chart-card">
-        <div class="chart-title">🛒 Compra: Primeira vs Recompra</div>
-        <div class="chart-container"><canvas id="compraChart"></canvas></div>
-      </div>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
