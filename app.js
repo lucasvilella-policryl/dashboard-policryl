@@ -610,6 +610,44 @@ function init() {
     }, 1000);
 }
 
+// AUTO-REFRESH A CADA 2 MINUTOS
+function startAutoRefresh() {
+    console.log('🔄 Iniciando auto-refresh (2 minutos)...');
+    
+    setInterval(() => {
+        console.log('🔄 Auto-refresh: recarregando dados...');
+        
+        // Forçar recarregamento dos dados
+        allData = [];
+        
+        // Atualizar o dashboard
+        updateDashboard();
+        
+    }, 2 * 60 * 1000); // 2 minutos em milissegundos
+}
+
+// E modifique a função init() para iniciar o auto-refresh:
+function init() {
+    console.log('🎯 Inicializando dashboard Policryl...');
+    
+    // CONFIGURAR 2025 COMO PADRÃO
+    document.getElementById('filterAno').value = '2025';
+    document.getElementById('filterMes').value = '10';
+    
+    // EVENTOS
+    ['filterAno','filterMes','filterLinha'].forEach(id => {
+        document.getElementById(id).addEventListener('change', updateDashboard);
+    });
+    
+    // CARREGAR DADOS E INICIAR
+    setTimeout(async () => { 
+        await fetchSheetData(); 
+        updateDashboard();
+        
+        // INICIAR AUTO-REFRESH APÓS PRIMEIRA CARGA
+        startAutoRefresh();
+    }, 1000);
+
 // INICIAR QUANDO A PÁGINA CARREGAR
 document.addEventListener('DOMContentLoaded', init);
 
