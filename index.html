@@ -98,41 +98,7 @@
                 <div class="kpi-subtitle">Entregues no mês</div>
             </div>
         </div>
-
-        <!-- Histórico Mensal -->
-        <div class="historico-section">
-            <div class="historico-card">
-                <div class="chart-title">📈 Histórico Mensal - Orçamentos vs Vendas vs Meta</div>
-                <div class="historico-chart">
-                    <!-- VERIFIQUE SE TEM ESTE CANVAS -->
-                    <canvas id="historicoChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Gráficos -->
-        <div class="charts-row">
-            <div class="chart-card">
-                <div class="chart-title">💳 Valores por Forma de Pagamento</div>
-                <div class="chart-container">
-                    <canvas id="pagamentoChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-title">🗺️ Pedidos por Região</div>
-                <div class="chart-container">
-                    <canvas id="regiaoChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-title">🛒 Compra: Primeira vs Recompra</div>
-                <div class="chart-container">
-                    <canvas id="compraChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Franquias + SKD -->
+         <!-- Franquias + SKD -->
         <div class="franquias-grid">
             <div class="franquia-card bc">
                 <div class="franquia-header"><div class="franquia-icon">BC</div><div class="franquia-name">Brasil Cacau</div></div>
@@ -204,6 +170,7 @@
                     <div class="conversion-track"><div class="conversion-fill" id="id-conversao-bar" style="width:0%"></div></div>
                 </div>
             </div>
+            <!--
             <div class="franquia-card skd">
                 <div class="franquia-header"><div class="franquia-icon">SKD</div><div class="franquia-name">Skullderia</div></div>
                 <div class="franquia-metrics">
@@ -218,9 +185,41 @@
                     <div class="conversion-track"><div class="conversion-fill" id="skd-conversao-bar" style="width:0%"></div></div>
                 </div>
             </div>
+            -->
         </div>
     </div>
+        <!-- Histórico Mensal -->
+        <div class="historico-section">
+            <div class="historico-card">
+                <div class="chart-title">📈 Histórico Mensal - Orçamentos vs Vendas vs Meta</div>
+                <div class="historico-chart">
+                    <!-- VERIFIQUE SE TEM ESTE CANVAS -->
+                    <canvas id="historicoChart"></canvas>
+                </div>
+            </div>
+        </div>
 
+        <!-- Gráficos -->
+        <div class="charts-row">
+            <div class="chart-card">
+                <div class="chart-title">💳 Valores por Forma de Pagamento</div>
+                <div class="chart-container">
+                    <canvas id="pagamentoChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">🗺️ Pedidos por Região</div>
+                <div class="chart-container">
+                    <canvas id="regiaoChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-title">🛒 Compra: Primeira vs Recompra</div>
+                <div class="chart-container">
+                    <canvas id="compraChart"></canvas>
+                </div>
+            </div>
+        </div>
     <script src="app.js"></script>
 </body>
 </html>
