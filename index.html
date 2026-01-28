@@ -1125,8 +1125,18 @@
                         ...thicknessConfig
                     }]
                 },
-                options: { plugins: { tooltip: { enabled: false } }, responsive: true, maintainAspectRatio: false }
-            });
+                options: { 
+            plugins: { tooltip: { enabled: false } }, 
+            responsive: true, 
+            maintainAspectRatio: false,
+            
+            // === ADICIONE ISTO AQUI ===
+            animation: {
+                animateRotate: true,
+                duration: 2000
+            }
+        }
+    });
 
             // 5. Gráfico de Frente (Progresso com Gradiente Neon)
             const ctxFg = canvasFg.getContext('2d');
@@ -1153,7 +1163,7 @@
                     plugins: { tooltip: { enabled: false } }, 
                     responsive: true, 
                     maintainAspectRatio: false,
-                    animation: { animateRotate: true, duration: 1500 }
+                    animation: { animateRotate: true, duration: 3500 }
                 }
             });
         }
