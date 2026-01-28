@@ -135,40 +135,86 @@
         /* Container do Gauge */
         .gauge-card {
             background: var(--card-bg);
-            backdrop-filter: var(--card-blur);
-            border-radius: 20px;
-            border: 1px solid var(--card-border);
-            padding: 25px;
+            border-radius: 24px;
+            padding: 30px 20px; /* Mais espaçamento */
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            min-height: 320px; /* Altura mínima maior para acomodar o gráfico maior */
             position: relative;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-        
-        /* Ajuste do canvas para o semicírculo */
-        .canvas-wrapper {
-            position: relative;
-            width: 280px;
-            height: 140px; /* Metade da largura para semicírculo perfeito */
-            margin-bottom: 15px;
         }
 
-        /* Textos abaixo do gauge */
+        /* Wrapper externo para ajudar no posicionamento relativo */
+        .canvas-wrapper-outer {
+            position: relative;
+            width: 380px; /* LARGURA AUMENTADA para mais destaque */
+            height: 190px; /* Metade da largura */
+            margin-top: 20px;
+        }
+
+        /* Container dos Canvas */
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Força os canvas a ocuparem o mesmo espaço */
+        .canvas-wrapper canvas {
+            position: absolute !important;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Camadas: Frente e Fundo */
+        #gaugeChart { z-index: 2; }
+        #gaugeBackground { z-index: 1; }
+
+        /* Etiquetas na BASE do arco (R$ 0 e R$ Meta) */
+        .gauge-labels-base {
+            position: absolute;
+            bottom: 0; /* Alinha na base do container do gráfico */
+            left: -30px; /* Puxa um pouco para fora */
+            right: -30px; /* Puxa um pouco para fora */
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px; /* Fonte maior */
+            font-weight: 800; /* Negrito forte */
+            color: #ffffff; /* Cor branca para destaque */
+            z-index: 3;
+            pointer-events: none;
+            transform: translateY(50%); /* Centraliza verticalmente na linha de base */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Sombra para leitura em fundos claros */
+        }
+
+        /* Footer com os valores */
         .gauge-footer {
             text-align: center;
-            margin-top: -10px; /* Sobe um pouco para ficar perto do arco */
-            z-index: 2;
+            margin-top: 40px; /* Mais espaço entre o gráfico e o texto */
+            z-index: 4;
         }
+
+        /* Valor Principal com Brilho */
         .gauge-main-value {
-            font-size: 28px; font-weight: 800; color: var(--text-primary);
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            line-height: 1.2;
+            font-size: 36px; /* Fonte bem maior */
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            margin-bottom: 5px;
         }
+
         .gauge-sub-label {
-            font-size: 12px; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 1px;
-            margin-top: 4px;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         .gauge-meta-target {
             font-size: 13px; color: var(--text-muted); margin-top: 4px; font-weight: 500;
@@ -531,24 +577,22 @@
         /* Ajuste do Wrapper para segurar dois canvas */
         .canvas-wrapper {
             position: relative;
-            width: 300px; /* Largura fixa para garantir alinhamento */
+            width: 300px;
             height: 150px;
-            margin-bottom: 5px;
-            margin-top: 10px;
+            margin: 0 auto 10px auto; /* Centralizado */
         }
 
-        /* Faz os gráficos ficarem um em cima do outro */
+        /* Força os canvas a ocuparem o mesmo espaço */
         .canvas-wrapper canvas {
-            position: absolute;
+            position: absolute !important;
             top: 0;
             left: 0;
             width: 100% !important;
             height: 100% !important;
         }
 
-        /* Gráfico da frente fica no topo */
+        /* Camadas: Frente e Fundo */
         #gaugeChart { z-index: 2; }
-        /* Gráfico de fundo fica atrás */
         #gaugeBackground { z-index: 1; }
 
         /* Etiquetas nos cantos (R$ 0 e Meta) */
@@ -565,6 +609,21 @@
             font-weight: 700;
             color: var(--text-muted);
         }
+
+        .gauge-card { position: relative; }
+        .gauge-labels {
+            position: absolute;
+            top: 130px; /* Ajuste vertical para alinhar com a base do arco */
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            z-index: 3;
+            pointer-events: none;
+        }
         
         /* Ajuste fino para "empurrar" os textos para fora do arco */
         .gauge-card { position: relative; } /* Contexto para o absolute */
@@ -574,6 +633,14 @@
         }
         .gauge-corner-label.left { left: 20px; }
         .gauge-corner-label.right { right: 20px; text-align: right; }
+
+        /* Valor Principal com Brilho */
+        .gauge-main-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -662,23 +729,21 @@
         </header>
         <div class="top-summary-area">    
             <div class="gauge-card">
-                <div class="gauge-labels-container">
-                    <span id="gaugeLabelMin" class="gauge-corner-label left">R$ 0</span>
-                    <span id="gaugeLabelMax" class="gauge-corner-label right">R$ 0M</span>
-                </div>
-                
-                <div class="canvas-wrapper">
-                    <canvas id="gaugeBackground"></canvas>
-                    <canvas id="gaugeChart"></canvas>
+                <div class="canvas-wrapper-outer">
+                     <div class="gauge-labels-base">
+                        <span id="gaugeLabelMin">R$ 0</span>
+                        <span id="gaugeLabelMax">R$ 0M</span>
+                    </div>
+
+                    <div class="canvas-wrapper">
+                        <canvas id="gaugeBackground"></canvas> <canvas id="gaugeChart"></canvas>      </div>
                 </div>
                 
                 <div class="gauge-footer">
                     <div class="gauge-main-value" id="gaugeValor">R$ 0,00</div>
                     <div class="gauge-sub-label">Total Vendido (Ano)</div>
-                    <div class="gauge-meta-target" id="gaugeMeta">Carregando meta...</div>
                 </div>
             </div>
-
             <div class="kpis-grid">
                 <div class="kpi-card primary">
                     <div class="kpi-label">Meta do Mês</div>
@@ -856,23 +921,25 @@
     <script>
 
         // ================= CONFIGURAÇÕES GLOBAIS =================
+        // ================= CONFIGURAÇÕES GLOBAIS =================
         const CSV_URL_DASH = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKstKflONSWvQ6xfVkMdM53mveopLXVGNv9CyQT0kRbjdI7IGIVzvvMPLSXNyQ-xZTQEvDmKr1jI_I/pub?gid=1199309873&single=true&output=csv';
 
-        // Definição das Metas Trimestrais (A soma gera a anual)
+        // NOVAS METAS TRIMESTRAIS (Fundamental para o gráfico novo)
         const METAS_TRIMESTRAIS = {
-            "2024": [1500000, 1500000, 1500000, 1500000], // Genérico
-            "2025": [1974456.66, 1974456.66, 1974456.66, 1974456.68], // Genérico
-            "2026": [2053434.18, 2088899.83, 2709257.11, 2148408.87] // Dados Reais
+            "2024": [1500000, 1500000, 1500000, 1500000],
+            "2025": [1974456.66, 1974456.66, 1974456.66, 1974456.68],
+            "2026": [2053434.18, 2088899.83, 2709257.11, 2148408.87]
+        };
+
+        const METAS_ANUAIS = {
+            "2024": 6000000.00, "2025": 7897826.66, "2026": 9000000.00 
         };
 
         const COLS = {
-            ANO:0, MES:1, LINHA:2,
-            META_MES:3, META_DIARIA:4,
-            QTDE_ORCAMENTOS:6, VALOR_ORCAMENTOS:7,
-            QTDE_PEDIDOS:13, VALOR_PEDIDOS:14,
+            ANO:0, MES:1, LINHA:2, META_MES:3, META_DIARIA:4,
+            QTDE_ORCAMENTOS:6, VALOR_ORCAMENTOS:7, QTDE_PEDIDOS:13, VALOR_PEDIDOS:14,
             PEDIDOS_PIX:19, VALORES_PIX:20, PEDIDOS_CARTAO_CREDITO:21, VALORES_CARTAO_CREDITO:22, PEDIDOS_BOLETO:23, VALORES_BOLETO:24,
-            PEDIDOS_ATRASADOS:25, PEDIDOS_A_LIBERAR:27,
-            PEDIDOS_FATURADOS_MES:28, PEDIDOS_EXPEDIDOS_MES:29,
+            PEDIDOS_ATRASADOS:25, PEDIDOS_A_LIBERAR:27, PEDIDOS_FATURADOS_MES:28, PEDIDOS_EXPEDIDOS_MES:29,
             PRIMEIRA_COMPRA:32, RECOMPRA:33,
             REGIAO_CENTRO_OESTE:34, REGIAO_NORDESTE:35, REGIAO_NORTE:36, REGIAO_SUDESTE:37, REGIAO_SUL:38
         };
@@ -881,14 +948,16 @@
         const MESES_NOMES_COMPLETOS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
         let allData = [];
-        let gaugeChart, historicoChart, pagamentoChart, regiaoChart, compraChart;
-        let countdownTimer;
-        let timeLeft;
+        // Variáveis globais para os gráficos
+        let gaugeChart, gaugeBackgroundChart, historicoChart, pagamentoChart, regiaoChart, compraChart;
+        let countdownTimer, timeLeft;
 
         // ================= FUNÇÕES UTILITÁRIAS =================
         function formatCurrency(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0); }
         function formatNumber(v){ return new Intl.NumberFormat('pt-BR').format(v||0); }
         function formatPercent(v){ return (v||0).toFixed(1)+'%'; }
+        
+        // Formatação compacta (ex: 9,5M)
         function formatShortCurrency(num) {
             if (num >= 1000000) return 'R$ ' + (num / 1000000).toFixed(1).replace('.', ',') + 'M';
             if (num >= 1000) return 'R$ ' + (num / 1000).toFixed(0).replace('.', ',') + 'K';
@@ -921,7 +990,7 @@
             return { ano, mes, linha, mesAnoRef: `${mesNome}/${ano}` };
         }
 
-        // ================= PROCESSAMENTO DE DADOS =================
+        // ================= GESTÃO DE DADOS =================
         function csvToArray(text){
             const lines = text.split(/\r?\n/).filter(l => l.length > 0);
             return lines.map(line => {
@@ -945,7 +1014,7 @@
                 allData = csvToArray(txt).slice(1);
                 return true;
             } catch(e) {
-                console.error('Erro ao carregar:', e);
+                console.error('Erro:', e);
                 return false;
             } finally {
                 if(loadingEl) loadingEl.style.display = 'none';
@@ -955,7 +1024,7 @@
         function findDataRowForFilters(filters){
             const linhaFiltroNorm = norm(filters.linha);
             const dadosFiltrados = allData.filter(row => {
-                const rowAno = String(row[COLS.ANO] || '').trim();
+                const rowAno = String(row[COLS.ANO]||'').trim();
                 const rowMes = normalizarMes(row[COLS.MES]);
                 const rowLinha = norm(row[COLS.LINHA]);
                 return rowAno === filters.ano && rowMes === filters.mes && (linhaFiltroNorm === 'todas' || rowLinha === linhaFiltroNorm);
@@ -966,29 +1035,24 @@
 
             const consolidado = new Array(40).fill(0);
             dadosFiltrados.forEach(row => {
-                Object.values(COLS).forEach(colIdx => {
-                    if ([3,4,7,14,20,22,24,25,27,28,29,32,33,34,35,36,37,38].includes(colIdx)) {
-                        consolidado[colIdx] += parseValue(row[colIdx]);
-                    }
+                Object.values(COLS).forEach(idx => {
+                    if ([3,4,7,14,20,22,24,25,27,28,29,32,33,34,35,36,37,38].includes(idx)) consolidado[idx] += parseValue(row[idx]);
                 });
             });
             return consolidado;
         }
 
         async function updateDashboard(forceReload = false){
-            if (forceReload || allData.length === 0) {
-                const success = await fetchSheetData();
-                if(!success) return;
-            }
-
+            if (forceReload || allData.length === 0) await fetchSheetData();
+            
             const filters = getCurrentFilters();
             const rowMensal = findDataRowForFilters(filters);
-
-            // KPIs Superiores
-            document.getElementById('metaMes').textContent = formatCurrency(rowMensal ? parseValue(rowMensal[COLS.META_MES]) : 0);
-            document.getElementById('mesRef').textContent = filters.mesAnoRef;
-            document.getElementById('valorVendas').textContent = formatCurrency(rowMensal ? parseValue(rowMensal[COLS.VALOR_PEDIDOS]) : 0);
             
+            // Atualiza KPIs
+            document.getElementById('metaMes').textContent = formatCurrency(rowMensal ? parseValue(rowMensal[COLS.META_MES]) : 0);
+            document.getElementById('valorVendas').textContent = formatCurrency(rowMensal ? parseValue(rowMensal[COLS.VALOR_PEDIDOS]) : 0);
+            document.getElementById('mesRef').textContent = filters.mesAnoRef;
+
             // Pedidos Gerais
             const linhaSelNorm = norm(filters.linha);
             const rowsGeral = allData.filter(r => (linhaSelNorm === 'todas') || (norm(r[COLS.LINHA]) === linhaSelNorm));
@@ -996,8 +1060,8 @@
             document.getElementById('pedidosLiberar').textContent = formatNumber(rowsGeral.reduce((s,r) => s + parseValue(r[COLS.PEDIDOS_A_LIBERAR]), 0));
             document.getElementById('pedidosExpedidos').textContent = formatNumber(rowMensal ? parseValue(rowMensal[COLS.PEDIDOS_EXPEDIDOS_MES]) : 0);
 
-            // Atualiza Componentes
-            updateGaugeChart(filters.ano);
+            // Atualiza Todos os Gráficos
+            updateGaugeChart(filters.ano); // <--- AQUI ESTÁ A CORREÇÃO
             updateHistoricoChart(filters.ano);
             updatePagamentoChart(filters);
             updateRegiaoChart(filters);
@@ -1005,21 +1069,84 @@
             updateFranquiasCards(filters);
         }
 
-        // ================= GRÁFICOS =================
+        // ================= FUNÇÃO CORRIGIDA DO VELOCÍMETRO =================
         function updateGaugeChart(ano) {
-            const canvas = document.getElementById('gaugeChart');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            const metaAnual = METAS_ANUAIS[ano] || 10000000;
+            const canvasBg = document.getElementById('gaugeBackground');
+            const canvasFg = document.getElementById('gaugeChart');
+            if (!canvasBg || !canvasFg) return;
+
+            // 1. Dados
+            const metas = METAS_TRIMESTRAIS[ano] || [2500000, 2500000, 2500000, 2500000];
+            const metaAnual = metas.reduce((a, b) => a + b, 0);
+            
             const rowsAno = allData.filter(r => String(r[COLS.ANO]).trim() === ano);
-            const totalVendidoAno = rowsAno.reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDOS]), 0);
-            const visualPercentage = Math.min(Math.max((totalVendidoAno / metaAnual) * 100, 0), 100);
-            document.getElementById('gaugeValor').textContent = formatCurrency(totalVendidoAno);
-            document.getElementById('gaugeMeta').textContent = `Meta ${ano}: ${formatShortCurrency(metaAnual)}`;
+            const vendasAno = rowsAno.reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDOS]), 0);
+            
+            const perc = (vendasAno / metaAnual) * 100;
+            const visualPerc = Math.min(Math.max(perc, 0), 100);
+
+            // 2. Textos (Apenas os necessários agora)
+            document.getElementById('gaugeValor').textContent = formatCurrency(vendasAno);
+            // REMOVIDO: document.getElementById('gaugeMeta')... (Não existe mais no HTML)
+            document.getElementById('gaugeLabelMin').textContent = "R$ 0,00"; // Ajustado para formato moeda completo
+            document.getElementById('gaugeLabelMax').textContent = formatShortCurrency(metaAnual);
+
+            // 3. Cores
+            let color = '#22c55e'; // Verde
+            if (perc < 50) color = '#ef4444'; // Vermelho
+            else if (perc < 85) color = '#f59e0b'; // Laranja
+
+            const isDark = document.getElementById('themeCheckbox').checked;
+            // Cores de fundo ligeiramente mais escuras para contraste com o arco mais grosso
+            const bgQ1 = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
+            const bgQ2 = isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.18)';
+
+            // Configuração Comum para Espessura (Cutout menor = arco mais grosso)
+            const thicknessConfig = {
+                cutout: '65%', // MUDANÇA AQUI: De 80% para 65% para ficar mais grosso
+                circumference: 180, 
+                rotation: -90
+            };
+
+            // 4. Gráfico de Fundo (Trimestres)
+            if (gaugeBackgroundChart) gaugeBackgroundChart.destroy();
+            gaugeBackgroundChart = new Chart(canvasBg.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: metas,
+                        backgroundColor: [bgQ1, bgQ2, bgQ1, bgQ2],
+                        borderWidth: 2,
+                        borderColor: isDark ? '#0a0a14' : '#ffffff',
+                        ...thicknessConfig // Aplica a espessura
+                    }]
+                },
+                options: { plugins: { tooltip: { enabled: false } }, responsive: true, maintainAspectRatio: false }
+            });
+
+            // 5. Gráfico de Frente (Progresso)
             if (gaugeChart) gaugeChart.destroy();
-            gaugeChart = new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [visualPercentage, 100 - visualPercentage], backgroundColor: ['#6366f1', 'rgba(255, 255, 255, 0.05)'], borderWidth: 0, borderRadius: [10, 0] }] }, options: { rotation: -90, circumference: 180, cutout: '80%', plugins: { legend: { display: false } } } });
+            gaugeChart = new Chart(canvasFg.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [visualPerc, 100 - visualPerc],
+                        backgroundColor: [color, 'transparent'],
+                        borderWidth: 0,
+                        borderRadius: [8, 0], // Borda arredondada ligeiramente maior
+                        ...thicknessConfig // Aplica a mesma espessura
+                    }]
+                },
+                options: { 
+                    plugins: { tooltip: { enabled: false } }, 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    animation: { animateRotate: true, duration: 1500 }
+                }
+            });
         }
 
+        // ================= OUTROS GRÁFICOS (MANTIDOS) =================
         function updateHistoricoChart(ano) {
             const canvas = document.getElementById('historicoChart');
             if (!canvas) return;
@@ -1031,7 +1158,17 @@
                 dataMeta.push(rowsMes.reduce((s,r) => s + parseValue(r[COLS.META_MES]), 0));
             }
             if (historicoChart) historicoChart.destroy();
-            historicoChart = new Chart(canvas.getContext('2d'), { type: 'line', data: { labels: MESES_NOMES_COMPLETOS.map(m => m.substring(0,3)), datasets: [{ label: 'Vendas', data: dataVen, borderColor: '#22c55e', tension: 0.3, fill: true, backgroundColor: 'rgba(34, 197, 94, 0.1)' }, { label: 'Meta', data: dataMeta, borderColor: '#f59e0b', borderDash: [5,5], tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+            historicoChart = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: MESES_NOMES_COMPLETOS.map(m => m.substring(0,3)),
+                    datasets: [
+                        { label: 'Vendas', data: dataVen, borderColor: '#22c55e', tension: 0.3, fill: true, backgroundColor: 'rgba(34, 197, 94, 0.1)' },
+                        { label: 'Meta', data: dataMeta, borderColor: '#f59e0b', borderDash: [5,5], tension: 0.3 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
         }
 
         function updatePagamentoChart(filters) {
@@ -1039,7 +1176,11 @@
             const row = findDataRowForFilters(filters);
             const vals = [parseValue(row?.[COLS.VALORES_PIX]), parseValue(row?.[COLS.VALORES_CARTAO_CREDITO]), parseValue(row?.[COLS.VALORES_BOLETO])];
             if (pagamentoChart) pagamentoChart.destroy();
-            pagamentoChart = new Chart(canvas.getContext('2d'), { type: 'doughnut', data: { labels: ['PIX', 'Cartão', 'Boleto'], datasets: [{ data: vals, backgroundColor: ['#22c55e', '#3b82f6', '#a855f7'] }] }, options: { maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } } });
+            pagamentoChart = new Chart(canvas.getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: ['PIX', 'Cartão', 'Boleto'], datasets: [{ data: vals, backgroundColor: ['#22c55e', '#3b82f6', '#a855f7'] }] },
+                options: { maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            });
         }
 
         function updateRegiaoChart(filters) {
@@ -1047,14 +1188,22 @@
             const row = findDataRowForFilters(filters);
             const data = [parseValue(row?.[COLS.REGIAO_CENTRO_OESTE]), parseValue(row?.[COLS.REGIAO_NORDESTE]), parseValue(row?.[COLS.REGIAO_NORTE]), parseValue(row?.[COLS.REGIAO_SUDESTE]), parseValue(row?.[COLS.REGIAO_SUL])];
             if (regiaoChart) regiaoChart.destroy();
-            regiaoChart = new Chart(canvas.getContext('2d'), { type: 'bar', data: { labels: ['CO', 'NE', 'N', 'SE', 'S'], datasets: [{ label: 'Pedidos', data: data, backgroundColor: '#6366f1', borderRadius: 5 }] }, options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+            regiaoChart = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: { labels: ['CO', 'NE', 'N', 'SE', 'S'], datasets: [{ label: 'Pedidos', data: data, backgroundColor: '#6366f1', borderRadius: 5 }] },
+                options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
         }
 
         function updateCompraChart(filters) {
             const canvas = document.getElementById('compraChart');
             const row = findDataRowForFilters(filters);
             if (compraChart) compraChart.destroy();
-            compraChart = new Chart(canvas.getContext('2d'), { type: 'pie', data: { labels: ['Primeira', 'Recompra'], datasets: [{ data: [parseValue(row?.[COLS.PRIMEIRA_COMPRA]), parseValue(row?.[COLS.RECOMPRA])], backgroundColor: ['#f59e0b', '#0ea5e9'] }] }, options: { maintainAspectRatio: false } });
+            compraChart = new Chart(canvas.getContext('2d'), {
+                type: 'pie',
+                data: { labels: ['Primeira', 'Recompra'], datasets: [{ data: [parseValue(row?.[COLS.PRIMEIRA_COMPRA]), parseValue(row?.[COLS.RECOMPRA])], backgroundColor: ['#f59e0b', '#0ea5e9'] }] },
+                options: { maintainAspectRatio: false }
+            });
         }
 
         function updateFranquiasCards(filters){
@@ -1101,9 +1250,10 @@
                 root.style.setProperty('--bg-main', '#f0f2f5'); root.style.setProperty('--card-bg', 'rgba(255, 255, 255, 0.9)'); root.style.setProperty('--text-primary', '#1e293b');
                 document.getElementById('logoImg').src = 'logo-policryl-preto.png';
             }
+            updateDashboard(false); // Atualiza cores dos gráficos
         }
 
-        // ================= TIMER COM MEMÓRIA (localStorage) =================
+        // ================= TIMER =================
         function startTimer(durationMs) {
             clearInterval(countdownTimer);
             timeLeft = durationMs / 1000;
@@ -1117,7 +1267,6 @@
 
         function setNewInterval() {
             const msecs = parseInt(document.getElementById('updateInterval').value);
-            // Salva a escolha do utilizador no navegador
             localStorage.setItem('dashboardRefreshInterval', msecs);
             startTimer(msecs);
             document.getElementById('updateMenu').classList.remove('active');
@@ -1126,7 +1275,6 @@
 
         // ================= INICIALIZAÇÃO =================
         document.addEventListener('DOMContentLoaded', () => {
-            // 1. Preencher Meses
             const mesSelect = document.getElementById('filterMes');
             const currentMonth = new Date().getMonth();
             MESES_NOMES_COMPLETOS.forEach((nome, i) => {
@@ -1135,14 +1283,12 @@
                 mesSelect.appendChild(opt);
             });
 
-            // 2. Recuperar Intervalo de Atualização Salvo
             const savedInterval = localStorage.getItem('dashboardRefreshInterval');
-            const intervalSelect = document.getElementById('updateInterval');
             if (savedInterval) {
-                intervalSelect.value = savedInterval;
+                document.getElementById('updateInterval').value = savedInterval;
                 startTimer(parseInt(savedInterval));
             } else {
-                startTimer(300000); // 5 min padrão na primeira vez
+                startTimer(300000);
             }
 
             updateDashboard(true);
