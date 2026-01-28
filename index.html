@@ -528,6 +528,52 @@
             flex-direction: column;
             align-items: center;
         }
+        /* Ajuste do Wrapper para segurar dois canvas */
+        .canvas-wrapper {
+            position: relative;
+            width: 300px; /* Largura fixa para garantir alinhamento */
+            height: 150px;
+            margin-bottom: 5px;
+            margin-top: 10px;
+        }
+
+        /* Faz os gráficos ficarem um em cima do outro */
+        .canvas-wrapper canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Gráfico da frente fica no topo */
+        #gaugeChart { z-index: 2; }
+        /* Gráfico de fundo fica atrás */
+        #gaugeBackground { z-index: 1; }
+
+        /* Etiquetas nos cantos (R$ 0 e Meta) */
+        .gauge-labels-container {
+            width: 100%;
+            max-width: 320px;
+            display: flex;
+            justify-content: space-between;
+            position: absolute;
+            bottom: 100px; /* Ajuste conforme altura do seu card */
+            z-index: 3;
+            pointer-events: none; /* Deixa clicar através do texto */
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        
+        /* Ajuste fino para "empurrar" os textos para fora do arco */
+        .gauge-card { position: relative; } /* Contexto para o absolute */
+        .gauge-corner-label {
+            position: absolute;
+            bottom: 130px; /* Alinha com a base do arco */
+        }
+        .gauge-corner-label.left { left: 20px; }
+        .gauge-corner-label.right { right: 20px; text-align: right; }
     </style>
 </head>
 <body>
@@ -616,13 +662,20 @@
         </header>
         <div class="top-summary-area">    
             <div class="gauge-card">
+                <div class="gauge-labels-container">
+                    <span id="gaugeLabelMin" class="gauge-corner-label left">R$ 0</span>
+                    <span id="gaugeLabelMax" class="gauge-corner-label right">R$ 0M</span>
+                </div>
+                
                 <div class="canvas-wrapper">
+                    <canvas id="gaugeBackground"></canvas>
                     <canvas id="gaugeChart"></canvas>
                 </div>
+                
                 <div class="gauge-footer">
                     <div class="gauge-main-value" id="gaugeValor">R$ 0,00</div>
                     <div class="gauge-sub-label">Total Vendido (Ano)</div>
-                    <div class="gauge-meta-target" id="gaugeMeta">Meta: R$ 0,00</div>
+                    <div class="gauge-meta-target" id="gaugeMeta">Carregando meta...</div>
                 </div>
             </div>
 
@@ -801,13 +854,15 @@
     </div>
 
     <script>
+
         // ================= CONFIGURAÇÕES GLOBAIS =================
         const CSV_URL_DASH = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKstKflONSWvQ6xfVkMdM53mveopLXVGNv9CyQT0kRbjdI7IGIVzvvMPLSXNyQ-xZTQEvDmKr1jI_I/pub?gid=1199309873&single=true&output=csv';
 
-        const METAS_ANUAIS = {
-            "2024": 6000000.00,
-            "2025": 7897826.66,
-            "2026": 9000000.00 
+        // Definição das Metas Trimestrais (A soma gera a anual)
+        const METAS_TRIMESTRAIS = {
+            "2024": [1500000, 1500000, 1500000, 1500000], // Genérico
+            "2025": [1974456.66, 1974456.66, 1974456.66, 1974456.68], // Genérico
+            "2026": [2053434.18, 2088899.83, 2709257.11, 2148408.87] // Dados Reais
         };
 
         const COLS = {
