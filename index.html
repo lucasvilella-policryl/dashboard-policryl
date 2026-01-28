@@ -934,7 +934,7 @@
             document.getElementById('mesRef').textContent = filters.mesAnoRef;
             document.getElementById('valorVendas').textContent = formatCurrency(rowMensal ? parseValue(rowMensal[COLS.VALOR_PEDIDOS]) : 0);
             
-            // Pedidos Gerais (Somando toda a base filtrada pela linha)
+            // Pedidos Gerais
             const linhaSelNorm = norm(filters.linha);
             const rowsGeral = allData.filter(r => (linhaSelNorm === 'todas') || (norm(r[COLS.LINHA]) === linhaSelNorm));
             document.getElementById('pedidosAtraso').textContent = formatNumber(rowsGeral.reduce((s,r) => s + parseValue(r[COLS.PEDIDOS_ATRASADOS]), 0));
@@ -950,7 +950,7 @@
             updateFranquiasCards(filters);
         }
 
-        // ================= GRÁFICOS E CARDS =================
+        // ================= GRÁFICOS =================
         function updateGaugeChart(ano) {
             const canvas = document.getElementById('gaugeChart');
             if (!canvas) return;
@@ -959,48 +959,24 @@
             const rowsAno = allData.filter(r => String(r[COLS.ANO]).trim() === ano);
             const totalVendidoAno = rowsAno.reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDOS]), 0);
             const visualPercentage = Math.min(Math.max((totalVendidoAno / metaAnual) * 100, 0), 100);
-
             document.getElementById('gaugeValor').textContent = formatCurrency(totalVendidoAno);
             document.getElementById('gaugeMeta').textContent = `Meta ${ano}: ${formatShortCurrency(metaAnual)}`;
-
             if (gaugeChart) gaugeChart.destroy();
-            gaugeChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: [visualPercentage, 100 - visualPercentage],
-                        backgroundColor: ['#6366f1', 'rgba(255, 255, 255, 0.05)'],
-                        borderWidth: 0,
-                        borderRadius: [10, 0]
-                    }]
-                },
-                options: { rotation: -90, circumference: 180, cutout: '80%', plugins: { legend: { display: false } } }
-            });
+            gaugeChart = new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [visualPercentage, 100 - visualPercentage], backgroundColor: ['#6366f1', 'rgba(255, 255, 255, 0.05)'], borderWidth: 0, borderRadius: [10, 0] }] }, options: { rotation: -90, circumference: 180, cutout: '80%', plugins: { legend: { display: false } } } });
         }
 
         function updateHistoricoChart(ano) {
             const canvas = document.getElementById('historicoChart');
             if (!canvas) return;
-            const dataOrc = [], dataVen = [], dataMeta = [];
+            const dataVen = [], dataMeta = [];
             for (let i = 1; i <= 12; i++) {
                 const mesNum = String(i).padStart(2, '0');
                 const rowsMes = allData.filter(r => String(r[COLS.ANO]).trim() === ano && normalizarMes(r[COLS.MES]) === mesNum);
-                dataOrc.push(rowsMes.reduce((s,r) => s + parseValue(r[COLS.VALOR_ORCAMENTOS]), 0));
                 dataVen.push(rowsMes.reduce((s,r) => s + parseValue(r[COLS.VALOR_PEDIDOS]), 0));
                 dataMeta.push(rowsMes.reduce((s,r) => s + parseValue(r[COLS.META_MES]), 0));
             }
             if (historicoChart) historicoChart.destroy();
-            historicoChart = new Chart(canvas.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: MESES_NOMES_COMPLETOS.map(m => m.substring(0,3)),
-                    datasets: [
-                        { label: 'Vendas', data: dataVen, borderColor: '#22c55e', tension: 0.3, fill: true, backgroundColor: 'rgba(34, 197, 94, 0.1)' },
-                        { label: 'Meta', data: dataMeta, borderColor: '#f59e0b', borderDash: [5,5], tension: 0.3 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
+            historicoChart = new Chart(canvas.getContext('2d'), { type: 'line', data: { labels: MESES_NOMES_COMPLETOS.map(m => m.substring(0,3)), datasets: [{ label: 'Vendas', data: dataVen, borderColor: '#22c55e', tension: 0.3, fill: true, backgroundColor: 'rgba(34, 197, 94, 0.1)' }, { label: 'Meta', data: dataMeta, borderColor: '#f59e0b', borderDash: [5,5], tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
         }
 
         function updatePagamentoChart(filters) {
@@ -1008,11 +984,7 @@
             const row = findDataRowForFilters(filters);
             const vals = [parseValue(row?.[COLS.VALORES_PIX]), parseValue(row?.[COLS.VALORES_CARTAO_CREDITO]), parseValue(row?.[COLS.VALORES_BOLETO])];
             if (pagamentoChart) pagamentoChart.destroy();
-            pagamentoChart = new Chart(canvas.getContext('2d'), {
-                type: 'doughnut',
-                data: { labels: ['PIX', 'Cartão', 'Boleto'], datasets: [{ data: vals, backgroundColor: ['#22c55e', '#3b82f6', '#a855f7'] }] },
-                options: { maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
-            });
+            pagamentoChart = new Chart(canvas.getContext('2d'), { type: 'doughnut', data: { labels: ['PIX', 'Cartão', 'Boleto'], datasets: [{ data: vals, backgroundColor: ['#22c55e', '#3b82f6', '#a855f7'] }] }, options: { maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } } });
         }
 
         function updateRegiaoChart(filters) {
@@ -1020,22 +992,14 @@
             const row = findDataRowForFilters(filters);
             const data = [parseValue(row?.[COLS.REGIAO_CENTRO_OESTE]), parseValue(row?.[COLS.REGIAO_NORDESTE]), parseValue(row?.[COLS.REGIAO_NORTE]), parseValue(row?.[COLS.REGIAO_SUDESTE]), parseValue(row?.[COLS.REGIAO_SUL])];
             if (regiaoChart) regiaoChart.destroy();
-            regiaoChart = new Chart(canvas.getContext('2d'), {
-                type: 'bar',
-                data: { labels: ['CO', 'NE', 'N', 'SE', 'S'], datasets: [{ label: 'Pedidos', data: data, backgroundColor: '#6366f1', borderRadius: 5 }] },
-                options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
+            regiaoChart = new Chart(canvas.getContext('2d'), { type: 'bar', data: { labels: ['CO', 'NE', 'N', 'SE', 'S'], datasets: [{ label: 'Pedidos', data: data, backgroundColor: '#6366f1', borderRadius: 5 }] }, options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } } } });
         }
 
         function updateCompraChart(filters) {
             const canvas = document.getElementById('compraChart');
             const row = findDataRowForFilters(filters);
             if (compraChart) compraChart.destroy();
-            compraChart = new Chart(canvas.getContext('2d'), {
-                type: 'pie',
-                data: { labels: ['Primeira', 'Recompra'], datasets: [{ data: [parseValue(row?.[COLS.PRIMEIRA_COMPRA]), parseValue(row?.[COLS.RECOMPRA])], backgroundColor: ['#f59e0b', '#0ea5e9'] }] },
-                options: { maintainAspectRatio: false }
-            });
+            compraChart = new Chart(canvas.getContext('2d'), { type: 'pie', data: { labels: ['Primeira', 'Recompra'], datasets: [{ data: [parseValue(row?.[COLS.PRIMEIRA_COMPRA]), parseValue(row?.[COLS.RECOMPRA])], backgroundColor: ['#f59e0b', '#0ea5e9'] }] }, options: { maintainAspectRatio: false } });
         }
 
         function updateFranquiasCards(filters){
@@ -1060,15 +1024,8 @@
         function toggleMenu(menuId, iconId) {
             const menu = document.getElementById(menuId);
             const icon = document.getElementById(iconId);
-            
-            // Fecha outros menus
-            document.querySelectorAll('.filter-dropdown').forEach(m => {
-                if(m.id !== menuId) m.classList.remove('active');
-            });
-            document.querySelectorAll('.ph-caret-down').forEach(i => {
-                if(i.id !== iconId) i.style.transform = 'rotate(0deg)';
-            });
-
+            document.querySelectorAll('.filter-dropdown').forEach(m => { if(m.id !== menuId) m.classList.remove('active'); });
+            document.querySelectorAll('.ph-caret-down').forEach(i => { if(i.id !== iconId) i.style.transform = 'rotate(0deg)'; });
             menu.classList.toggle('active');
             icon.style.transform = menu.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
         }
@@ -1083,19 +1040,15 @@
             const checkbox = document.getElementById('themeCheckbox');
             const root = document.documentElement;
             if (checkbox.checked) {
-                root.style.setProperty('--bg-main', '#0a0a14');
-                root.style.setProperty('--card-bg', 'rgba(20, 20, 40, 0.7)');
-                root.style.setProperty('--text-primary', '#ffffff');
+                root.style.setProperty('--bg-main', '#0a0a14'); root.style.setProperty('--card-bg', 'rgba(20, 20, 40, 0.7)'); root.style.setProperty('--text-primary', '#ffffff');
                 document.getElementById('logoImg').src = 'logo-policryl-branco.png';
             } else {
-                root.style.setProperty('--bg-main', '#f0f2f5');
-                root.style.setProperty('--card-bg', 'rgba(255, 255, 255, 0.9)');
-                root.style.setProperty('--text-primary', '#1e293b');
+                root.style.setProperty('--bg-main', '#f0f2f5'); root.style.setProperty('--card-bg', 'rgba(255, 255, 255, 0.9)'); root.style.setProperty('--text-primary', '#1e293b');
                 document.getElementById('logoImg').src = 'logo-policryl-preto.png';
             }
         }
 
-        // ================= TIMER =================
+        // ================= TIMER COM MEMÓRIA (localStorage) =================
         function startTimer(durationMs) {
             clearInterval(countdownTimer);
             timeLeft = durationMs / 1000;
@@ -1109,6 +1062,8 @@
 
         function setNewInterval() {
             const msecs = parseInt(document.getElementById('updateInterval').value);
+            // Salva a escolha do utilizador no navegador
+            localStorage.setItem('dashboardRefreshInterval', msecs);
             startTimer(msecs);
             document.getElementById('updateMenu').classList.remove('active');
             document.getElementById('updateIcon').style.transform = 'rotate(0deg)';
@@ -1116,20 +1071,28 @@
 
         // ================= INICIALIZAÇÃO =================
         document.addEventListener('DOMContentLoaded', () => {
+            // 1. Preencher Meses
             const mesSelect = document.getElementById('filterMes');
             const currentMonth = new Date().getMonth();
             MESES_NOMES_COMPLETOS.forEach((nome, i) => {
-                const opt = document.createElement('option');
-                opt.value = String(i + 1).padStart(2, '0');
-                opt.text = nome;
+                const opt = document.createElement('option'); opt.value = String(i + 1).padStart(2, '0'); opt.text = nome;
                 if (i === currentMonth) opt.selected = true;
                 mesSelect.appendChild(opt);
             });
+
+            // 2. Recuperar Intervalo de Atualização Salvo
+            const savedInterval = localStorage.getItem('dashboardRefreshInterval');
+            const intervalSelect = document.getElementById('updateInterval');
+            if (savedInterval) {
+                intervalSelect.value = savedInterval;
+                startTimer(parseInt(savedInterval));
+            } else {
+                startTimer(300000); // 5 min padrão na primeira vez
+            }
+
             updateDashboard(true);
-            startTimer(300000); // 5 min padrão
         });
 
-        // Fecha menus ao clicar fora
         window.onclick = function(event) {
             if (!event.target.closest('.control-wrapper')) {
                 document.querySelectorAll('.filter-dropdown').forEach(m => m.classList.remove('active'));
