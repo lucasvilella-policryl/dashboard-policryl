@@ -133,34 +133,32 @@
         }
 
         /* Container do Gauge */
-        .gauge-card {
+       .gauge-card {
             background: var(--card-bg);
             border-radius: 24px;
-            padding: 30px 20px; /* Mais espaçamento */
+            padding: 20px;
             box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            
             display: flex;
             flex-direction: column;
+            justify-content: flex-start; /* Alinha tudo ao topo */
             align-items: center;
-            justify-content: center;
-            min-height: 320px; /* Altura mínima maior para acomodar o gráfico maior */
+            height: 100%;
+            min-height: 280px;
             position: relative;
+            overflow: hidden; /* Evita que o brilho vaze */
         }
 
-        /* Wrapper externo para ajudar no posicionamento relativo */
-        .canvas-wrapper-outer {
-            position: relative;
-            width: 380px; /* LARGURA AUMENTADA para mais destaque */
-            height: 190px; /* Metade da largura */
-            margin-top: 20px;
-        }
-
-        /* Container dos Canvas */
+        /* Container dos Gráficos */
         .canvas-wrapper {
             position: relative;
             width: 100%;
-            height: 100%;
+            max-width: 450px;
+            aspect-ratio: 2 / 1; /* Mantém a proporção de semicírculo */
+            margin-bottom: -50px; /* Puxa o texto para cima, aproximando-o do arco */
+            z-index: 1; /* Fica atrás do texto */
         }
 
         /* Força os canvas a ocuparem o mesmo espaço */
@@ -173,48 +171,59 @@
         }
 
         /* Camadas: Frente e Fundo */
-        #gaugeChart { z-index: 2; }
+        #gaugeChart { z-index: 2; filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3)); /* Brilho sutil no gráfico */ }
         #gaugeBackground { z-index: 1; }
 
-        /* Etiquetas na BASE do arco (R$ 0 e R$ Meta) */
-        .gauge-labels-base {
-            position: absolute;
-            bottom: 0; /* Alinha na base do container do gráfico */
-            left: -30px; /* Puxa um pouco para fora */
-            right: -30px; /* Puxa um pouco para fora */
+        /* Container de Texto Alinhado na Base */
+        .gauge-text-container {
             display: flex;
             justify-content: space-between;
-            font-size: 16px; /* Fonte maior */
-            font-weight: 800; /* Negrito forte */
-            color: #ffffff; /* Cor branca para destaque */
-            z-index: 3;
-            pointer-events: none;
-            transform: translateY(50%); /* Centraliza verticalmente na linha de base */
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5); /* Sombra para leitura em fundos claros */
+            align-items: flex-end; /* Alinha os textos pela linha de base inferior */
+            width: 100%;
+            max-width: 480px; /* Um pouco mais largo que o gráfico para os rótulos */
+            padding: 0 15px;
+            z-index: 2; /* Fica na frente do gráfico */
+            margin-top: auto; /* Empurra para a parte inferior do card */
+            padding-bottom: 10px;
         }
 
-        /* Footer com os valores */
-        .gauge-footer {
-            text-align: center;
-            margin-top: 40px; /* Mais espaço entre o gráfico e o texto */
-            z-index: 4;
-        }
-
-        /* Valor Principal com Brilho */
-        .gauge-main-value {
-            font-size: 36px; /* Fonte bem maior */
+        /* Rótulos Laterais (R$ 0 e Meta) */
+        .gauge-side-label {
+            font-size: 16px;
             font-weight: 800;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 50px; /* Ajuste fino para alinhar com a base do valor central */
+        }
+
+        /* Texto Central */
+        .gauge-center-text {
+            text-align: center;
+        }
+
+        /* Valor Principal com Efeito Neon */
+        .gauge-main-value {
+            font-size: 36px;
+            font-weight: 900;
             color: #fff;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            /* Sombra de texto múltipla para efeito neon mais forte */
+            text-shadow: 
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px #0fa, /* Tom esverdeado/azulado para o brilho */
+                0 0 40px #0fa;
+            line-height: 1;
             margin-bottom: 5px;
         }
 
         .gauge-sub-label {
-            font-size: 14px;
+            font-size: 12px;
             color: var(--text-muted);
             font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.2px;
+            opacity: 0.8;
+        }
         }
         .gauge-meta-target {
             font-size: 13px; color: var(--text-muted); margin-top: 4px; font-weight: 500;
@@ -729,19 +738,18 @@
         </header>
         <div class="top-summary-area">    
             <div class="gauge-card">
-                <div class="canvas-wrapper-outer">
-                     <div class="gauge-labels-base">
-                        <span id="gaugeLabelMin">R$ 0</span>
-                        <span id="gaugeLabelMax">R$ 0M</span>
-                    </div>
-
-                    <div class="canvas-wrapper">
-                        <canvas id="gaugeBackground"></canvas> <canvas id="gaugeChart"></canvas>      </div>
-                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="gaugeBackground"></canvas> <canvas id="gaugeChart"></canvas>      </div>
                 
-                <div class="gauge-footer">
-                    <div class="gauge-main-value" id="gaugeValor">R$ 0,00</div>
-                    <div class="gauge-sub-label">Total Vendido (Ano)</div>
+                <div class="gauge-text-container">
+                    <span id="gaugeLabelMin" class="gauge-side-label">R$ 0,00</span>
+                    
+                    <div class="gauge-center-text">
+                        <div class="gauge-main-value" id="gaugeValor">R$ 0,00</div>
+                        <div class="gauge-sub-label">TOTAL VENDIDO (ANO)</div>
+                    </div>
+                    
+                    <span id="gaugeLabelMax" class="gauge-side-label">R$ 0M</span>
                 </div>
             </div>
             <div class="kpis-grid">
@@ -1069,7 +1077,7 @@
             updateFranquiasCards(filters);
         }
 
-        // ================= FUNÇÃO CORRIGIDA DO VELOCÍMETRO =================
+        // ================= FUNÇÃO DO VELOCÍMETRO COM ALINHAMENTO E GRADIENTE NEON =================
         function updateGaugeChart(ano) {
             const canvasBg = document.getElementById('gaugeBackground');
             const canvasFg = document.getElementById('gaugeChart');
@@ -1085,25 +1093,21 @@
             const perc = (vendasAno / metaAnual) * 100;
             const visualPerc = Math.min(Math.max(perc, 0), 100);
 
-            // 2. Textos (Apenas os necessários agora)
+            // 2. Atualiza os Textos Alinhados
             document.getElementById('gaugeValor').textContent = formatCurrency(vendasAno);
-            // REMOVIDO: document.getElementById('gaugeMeta')... (Não existe mais no HTML)
-            document.getElementById('gaugeLabelMin').textContent = "R$ 0,00"; // Ajustado para formato moeda completo
+            document.getElementById('gaugeLabelMin').textContent = "R$ 0,00";
             document.getElementById('gaugeLabelMax').textContent = formatShortCurrency(metaAnual);
 
-            // 3. Cores
-            let color = '#22c55e'; // Verde
-            if (perc < 50) color = '#ef4444'; // Vermelho
-            else if (perc < 85) color = '#f59e0b'; // Laranja
-
             const isDark = document.getElementById('themeCheckbox').checked;
-            // Cores de fundo ligeiramente mais escuras para contraste com o arco mais grosso
-            const bgQ1 = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
-            const bgQ2 = isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.18)';
 
-            // Configuração Comum para Espessura (Cutout menor = arco mais grosso)
+            // 3. Cores de Fundo Suavizadas (Translúcidas)
+            const bgQ1 = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)';
+            const bgQ2 = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            const borderColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+            // Configuração de Espessura
             const thicknessConfig = {
-                cutout: '65%', // MUDANÇA AQUI: De 80% para 65% para ficar mais grosso
+                cutout: '60%', 
                 circumference: 180, 
                 rotation: -90
             };
@@ -1116,25 +1120,33 @@
                     datasets: [{
                         data: metas,
                         backgroundColor: [bgQ1, bgQ2, bgQ1, bgQ2],
-                        borderWidth: 2,
-                        borderColor: isDark ? '#0a0a14' : '#ffffff',
-                        ...thicknessConfig // Aplica a espessura
+                        borderWidth: 1,
+                        borderColor: borderColor,
+                        ...thicknessConfig
                     }]
                 },
                 options: { plugins: { tooltip: { enabled: false } }, responsive: true, maintainAspectRatio: false }
             });
 
-            // 5. Gráfico de Frente (Progresso)
+            // 5. Gráfico de Frente (Progresso com Gradiente Neon)
+            const ctxFg = canvasFg.getContext('2d');
+            // Cria o gradiente horizontal (da esquerda para a direita)
+            const gradient = ctxFg.createLinearGradient(0, 0, canvasFg.width, 0);
+            // Define as paradas de cor para o efeito neon (Vermelho -> Amarelo -> Verde)
+            gradient.addColorStop(0, 'rgba(255, 0, 60, 1)');    // Vermelho Neon
+            gradient.addColorStop(0.5, 'rgba(255, 220, 0, 1)');  // Amarelo Neon
+            gradient.addColorStop(1, 'rgba(0, 255, 150, 1)');    // Verde Neon
+
             if (gaugeChart) gaugeChart.destroy();
-            gaugeChart = new Chart(canvasFg.getContext('2d'), {
+            gaugeChart = new Chart(ctxFg, {
                 type: 'doughnut',
                 data: {
                     datasets: [{
                         data: [visualPerc, 100 - visualPerc],
-                        backgroundColor: [color, 'transparent'],
+                        backgroundColor: [gradient, 'transparent'], // Usa o gradiente como cor de preenchimento
                         borderWidth: 0,
-                        borderRadius: [8, 0], // Borda arredondada ligeiramente maior
-                        ...thicknessConfig // Aplica a mesma espessura
+                        borderRadius: [8, 0],
+                        ...thicknessConfig
                     }]
                 },
                 options: { 
