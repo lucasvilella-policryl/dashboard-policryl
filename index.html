@@ -91,6 +91,9 @@
             border-radius: 16px;
             border: 1px solid var(--card-border);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            /* Correção fundamental: */
+            position: relative; 
+            z-index: 1000; 
         }
 
         .logo-section { display: flex; align-items: center; gap: 20px; }
@@ -311,6 +314,220 @@
             .filter-group { flex: 1; min-width: 120px; }
             .kpis-grid, .franquias-grid { grid-template-columns: 1fr; }
         }
+
+        /* Container do Filtro Único */
+        .filter-wrapper {
+            position: relative;
+        }
+
+        /* Botão Filtros mais fino e discreto */
+        .filter-trigger {
+            background: transparent;
+            border: 1px solid rgba(99, 102, 241, 0.6);
+            color: #ffffff;
+            padding: 10px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            min-width: 130px;
+            justify-content: space-between;
+            transition: all 0.3s;
+        }
+
+        .filter-trigger:hover {
+            border-color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        /* Menu Suspenso (Dropdown) */
+        .filter-dropdown {
+            position: absolute;
+            top: calc(100% + 15px); /* Espaço abaixo do botão */
+            right: 0;
+            background: #111122; /* Fundo sólido para não transparecer o que está atrás */
+            border: 2px solid var(--accent-primary);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); /* Sombra mais pesada para dar profundidade */
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 300px;
+            
+            /* Z-INDEX ALTÍSSIMO para ficar na frente de tudo */
+            z-index: 9999 !important; 
+            backdrop-filter: blur(20px);
+        }
+
+        /* Classe que será adicionada via JS para mostrar o menu */
+        .filter-dropdown.active {
+            display: flex !important;
+            animation: fadeInDown 0.3s ease;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Ajuste dos selects dentro do menu */
+        .filter-dropdown .filter-group select {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+        }
+        .btn-apply {
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn-apply:hover {
+            filter: brightness(1.2);
+            box-shadow: 0 0 15px var(--accent-primary);
+        }
+
+        /* Estilo do Toggle de Tema */
+        .theme-switch-wrapper { display: flex; align-items: center; }
+        .theme-switch {
+            display: inline-block; height: 34px; position: relative; width: 60px;
+        }
+        .theme-switch input { display:none; }
+        .slider {
+            background-color: #4b7bec; border-radius: 34px; bottom: 0; cursor: pointer;
+            left: 0; position: absolute; right: 0; top: 0; transition: .4s;
+            display: flex; align-items: center; padding: 0 5px;
+        }
+        .slider:before {
+            background-color: #fff; border-radius: 50%; content: ""; height: 26px;
+            position: absolute; transition: .4s; width: 26px; left: 4px; z-index: 2;
+        }
+
+        input:checked + .slider { background-color: #4b7bec; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .slider i { color: white; margin-left: auto; font-size: 18px; }
+
+        /* Cronômetro Refresh */
+        .update-container { display: flex; flex-direction: column; align-items: center; }
+        
+
+        /* Ajuste de cor do menu suspenso conforme imagem (Fundo escuro, borda neon) */
+        .filter-dropdown {
+            display: none; 
+            position: absolute;
+            top: calc(100% + 15px);
+            right: 0;
+            background: #1a1a2e; /* Azul marinho escuro conforme sua imagem */
+            border: 2px solid #6366f1;
+            padding: 20px;
+            border-radius: 16px;
+            z-index: 9999; /* Fica na frente de tudo */
+            min-width: 280px;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Ajuste dos Selects para não ficarem com fundo branco bugado */
+        select option {
+            background-color: #1a1a2e;
+            color: white;
+        }
+        /* Garante que o fundo do select seja escuro quando aberto */
+        select {
+            background-color: #111122 !important;
+            color: white !important;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Container de Controles Alinhados */
+        .header-controls {
+            display: flex;
+            align-items: flex-start; /* Alinha o topo dos botões */
+            gap: 12px;
+        }
+
+        .control-item {
+            position: relative; /* Base para o timer e dropdowns */
+        }
+
+        /* Ajuste do Texto de Refresh (Ciano e Centralizado) */
+        .update-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .refresh-timer {
+            color: #00d4ff; /* Ciano das imagens */
+            font-size: 10px;
+            font-weight: 800;
+            margin-top: 8px;
+            letter-spacing: 0.5px;
+            font-family: monospace;
+        }
+
+        /* === ESTILO DO TOGGLE SOL/LUA === */
+        .theme-container { margin-right: 10px; }
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 54px;
+            height: 28px;
+        }
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
+
+        .theme-slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #4b7bec; /* Azul do dark mode */
+            transition: .4s; border-radius: 34px;
+        }
+
+        .icon-container {
+            position: absolute;
+            height: 22px; width: 22px;
+            left: 4px; bottom: 3px;
+            background-color: white;
+            transition: .4s; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Ícones dentro do círculo branco */
+        .icon-container i { font-size: 16px; transition: .4s; }
+        .sun-icon { color: #f1c40f; display: none; }
+        .moon-icon { color: #4b7bec; display: block; }
+
+        /* === CSS DO TOGGLE (CORRIGIDO) === */
+        .theme-switch { position: relative; display: inline-block; width: 50px; height: 26px; margin-top: 5px; }
+        .theme-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #4b7bec; border-radius: 34px; transition: .4s; }
+        .icon-container { position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .4s; display: flex; align-items: center; justify-content: center; }
+        input:not(:checked) + .theme-slider { background-color: #ccc; }
+        input:not(:checked) + .theme-slider .icon-container { transform: translateX(24px); }
+        .sun-icon { color: #f1c40f; display: none; }
+        .moon-icon { color: #4b7bec; display: block; }
+        input:not(:checked) + .theme-slider .sun-icon { display: block; }
+        input:not(:checked) + .theme-slider .moon-icon { display: none; }
+
+        .control-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -323,40 +540,81 @@
         <header class="header">
             <div class="logo-section">
                 <div class="logo">
-                    <img src="logo-policryl-branco-x2.png" alt="Logo Policryl">
+                    <img src="logo-policryl-branco.png" alt="Logo Policryl" id="logoImg">
                 </div>
             </div>
             
-            <div class="filters">
-                <div class="filter-group">
-                    <label><i class="ph-bold ph-calendar-blank"></i> Ano</label>
-                    <select id="filterAno" onchange="updateDashboard()">
-                        <option value="2024">2024</option>
-                        <option value="2025">2025</option>
-                        <option value="2026" selected>2026</option>
-                    </select>
+            <div class="header-controls">
+                <div class="theme-container">
+                    <label class="theme-switch">
+                        <input type="checkbox" id="themeCheckbox" onchange="toggleTheme()" checked>
+                        <div class="theme-slider">
+                            <div class="icon-container">
+                                <i class="ph-bold ph-sun-dim sun-icon"></i>
+                                <i class="ph-bold ph-moon moon-icon"></i>
+                            </div>
+                        </div>
+                    </label>
                 </div>
-                <div class="filter-group">
-                    <label><i class="ph-bold ph-calendar"></i> Mês</label>
-                    <select id="filterMes" onchange="updateDashboard()">
-                        </select>
+
+                <div class="control-wrapper">
+                    <button class="filter-trigger" onclick="toggleMenu('filterMenu', 'filterIcon')">
+                        <span>Filtros</span>
+                        <i class="ph-bold ph-caret-down" id="filterIcon"></i>
+                    </button>
+                    <div class="filter-dropdown" id="filterMenu">
+                        <div class="filter-group">
+                            <label>Ano</label>
+                            <select id="filterAno">
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026" selected>2026</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Mês</label>
+                            <select id="filterMes"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Linha/Franquia</label>
+                            <select id="filterLinha">
+                                <option value="todas">Todas as Linhas</option>
+                                <option value="FRA - Brasil Cacau">Brasil Cacau</option>
+                                <option value="FRA - Cacau Show">Cacau Show</option>
+                                <option value="FRA - Kopenhagen">Kopenhagen</option>
+                                <option value="IND - Industries">Industries</option>
+                                <option value="PLB - PolyBee">PolyBee</option>
+                            </select>
+                        </div>
+                        <button class="btn-apply" onclick="applyAndClose()">APLICAR</button>
+                    </div>
                 </div>
-                <div class="filter-group">
-                    <label><i class="ph-bold ph-storefront"></i> Linha/Franquia</label>
-                    <select id="filterLinha" onchange="updateDashboard()">
-                        <option value="todas">Todas as Linhas</option>
-                        <option value="FRA - Brasil Cacau">Brasil Cacau</option>
-                        <option value="FRA - Cacau Show">Cacau Show</option>
-                        <option value="FRA - Kopenhagen">Kopenhagen</option>
-                        <option value="IND - Industries">Industries</option>
-                        <option value="PLB - PolyBee">PolyBee</option>
-                        </select>
+
+                <div class="control-wrapper update-column">
+                    <button class="filter-trigger" onclick="toggleMenu('updateMenu', 'updateIcon')">
+                        <span>Atualização</span>
+                        <i class="ph-bold ph-caret-down" id="updateIcon"></i>
+                    </button>
+                    <div class="refresh-timer" id="timerDisplay">REFRESH EM: 00:00</div>
+                    
+                    <div class="filter-dropdown" id="updateMenu">
+                        <div class="filter-group">
+                            <label>Intervalo</label>
+                            <select id="updateInterval" onchange="setNewInterval()">
+                                <option value="30000">30 seg</option>
+                                <option value="60000">1 min</option>
+                                <option value="120000">2 min</option>
+                                <option value="300000" selected>5 min</option>
+                                <option value="600000">10 min</option>
+                                <option value="900000">15 min</option>
+                                <option value="1800000">30 min</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
-
-        <div class="top-summary-area">
-            
+        <div class="top-summary-area">    
             <div class="gauge-card">
                 <div class="canvas-wrapper">
                     <canvas id="gaugeChart"></canvas>
@@ -544,18 +802,14 @@
 
     <script>
         // ================= CONFIGURAÇÕES GLOBAIS =================
-        // URL do CSV (Google Sheets publicado)
         const CSV_URL_DASH = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKstKflONSWvQ6xfVkMdM53mveopLXVGNv9CyQT0kRbjdI7IGIVzvvMPLSXNyQ-xZTQEvDmKr1jI_I/pub?gid=1199309873&single=true&output=csv';
 
-        // Metas Manuais por Ano (para o Velocímetro)
-        // Ajuste estes valores conforme necessário.
         const METAS_ANUAIS = {
-            "2024": 6000000.00, // Exemplo: 8.5 Milhões
-            "2025": 7897826.66, // Exemplo: 12 Milhões
-            "2026": 9000000.00  // Exemplo: 15 Milhões
+            "2024": 6000000.00,
+            "2025": 7897826.66,
+            "2026": 9000000.00 
         };
 
-        // Mapeamento de Colunas do CSV (Índices base zero)
         const COLS = {
             ANO:0, MES:1, LINHA:2,
             META_MES:3, META_DIARIA:4,
@@ -568,146 +822,104 @@
             REGIAO_CENTRO_OESTE:34, REGIAO_NORDESTE:35, REGIAO_NORTE:36, REGIAO_SUDESTE:37, REGIAO_SUL:38
         };
 
-        // Mapeamento de Meses
         const MESES_MAP = {'JAN':'01','FEV':'02','MAR':'03','ABR':'04','MAI':'05','JUN':'06','JUL':'07','AGO':'08','SET':'09','OUT':'10','NOV':'11','DEZ':'12'};
         const MESES_NOMES_COMPLETOS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-        // Variáveis de Estado
         let allData = [];
         let gaugeChart, historicoChart, pagamentoChart, regiaoChart, compraChart;
+        let countdownTimer;
+        let timeLeft;
 
         // ================= FUNÇÕES UTILITÁRIAS =================
-        // Formata moeda (R$ X.XXX,XX)
         function formatCurrency(v){ return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0); }
-        // Formata número simples (X.XXX)
         function formatNumber(v){ return new Intl.NumberFormat('pt-BR').format(v||0); }
-        // Formata porcentagem (XX.X%)
         function formatPercent(v){ return (v||0).toFixed(1)+'%'; }
-        // Formata moeda abreviada (ex: 1.5M, 500K) para o gauge
         function formatShortCurrency(num) {
             if (num >= 1000000) return 'R$ ' + (num / 1000000).toFixed(1).replace('.', ',') + 'M';
             if (num >= 1000) return 'R$ ' + (num / 1000).toFixed(0).replace('.', ',') + 'K';
             return formatCurrency(num);
         }
 
-        // Converte string de valor do CSV para float
         function parseValue(v){
             if (!v && v!==0) return 0;
             if (typeof v==='number') return v;
-            // Remove R$, pontos de milhar e espaços, troca vírgula por ponto
             const cleaned = String(v).replace(/[R$\s.]/g,'').replace(',','.');
             return parseFloat(cleaned)||0;
         }
 
-        // Normaliza o mês para formato "01", "02"...
         function normalizarMes(m){
             const s = String(m||'').trim().toUpperCase();
             if (MESES_MAP[s]) return MESES_MAP[s];
             const n = parseInt(s,10);
             if(!isNaN(n) && n>=1 && n<=12) return String(n).padStart(2,'0');
-            return '01'; // Default
+            return '01';
         }
 
-        // Normaliza strings para comparação (remove acentos, lowercase)
         const norm = (s) => String(s ?? '').normalize('NFD').replace(/\p{Diacritic}/gu, '').trim().toLowerCase();
 
-        // Lê os filtros atuais da interface
         function getCurrentFilters(){
-            const anoEl = document.getElementById('filterAno');
-            const mesEl = document.getElementById('filterMes');
-            const linhaEl = document.getElementById('filterLinha');
-            
-            const ano = anoEl.value;
-            const mes = mesEl.value;
-            const rawLinha = linhaEl.value;
+            const ano = document.getElementById('filterAno').value;
+            const mes = document.getElementById('filterMes').value;
+            const rawLinha = document.getElementById('filterLinha').value;
             const linha = (norm(rawLinha) === 'todas') ? 'todas' : rawLinha;
-            
             const mesNome = MESES_NOMES_COMPLETOS[parseInt(mes)-1];
             return { ano, mes, linha, mesAnoRef: `${mesNome}/${ano}` };
         }
 
-        // ================= PARSER DE CSV =================
+        // ================= PROCESSAMENTO DE DADOS =================
         function csvToArray(text){
-            // Divide por quebra de linha, ignorando linhas vazias
             const lines = text.split(/\r?\n/).filter(l => l.length > 0);
             return lines.map(line => {
                 const out = []; let cur = '', q = false;
                 for (let i=0; i<line.length; i++){
                     const ch = line[i];
-                    // Lida com aspas duplas no CSV
                     if (ch === '"'){ if (q && line[i+1] === '"'){ cur+='"'; i++; } else { q=!q; } }
                     else if (ch === ',' && !q){ out.push(cur); cur=''; }
                     else { cur += ch; }
                 }
-                out.push(cur);
-                return out;
+                out.push(cur); return out;
             });
         }
 
-        // ================= CARREGAMENTO DE DADOS =================
         async function fetchSheetData(){
             const loadingEl = document.getElementById('loading');
             if(loadingEl) loadingEl.style.display = 'flex';
-            
             try {
-                // Adiciona timestamp para evitar cache do navegador
-                const url = `${CSV_URL_DASH}&cb=${Date.now()}`;
-                const res = await fetch(url);
-                if (!res.ok) throw new Error(`Erro HTTP: ${res.status}`);
+                const res = await fetch(`${CSV_URL_DASH}&cb=${Date.now()}`);
                 const txt = await res.text();
-                const rows = csvToArray(txt);
-                
-                if (!rows || rows.length <= 1) throw new Error('CSV vazio ou inválido');
-                // Remove o cabeçalho (primeira linha)
-                allData = rows.slice(1);
-                console.log('Dados carregados:', allData.length, 'linhas');
+                allData = csvToArray(txt).slice(1);
                 return true;
             } catch(e) {
-                console.error('Erro ao carregar dados:', e);
-                alert('Falha ao carregar dados. Verifique a conexão ou a URL do CSV.');
+                console.error('Erro ao carregar:', e);
                 return false;
             } finally {
                 if(loadingEl) loadingEl.style.display = 'none';
             }
         }
 
-        // ================= LÓGICA DO DASHBOARD =================
-        // Encontra a linha específica no CSV baseada nos filtros de Ano/Mês/Linha
         function findDataRowForFilters(filters){
             const linhaFiltroNorm = norm(filters.linha);
-            // Filtra os dados brutos
             const dadosFiltrados = allData.filter(row => {
                 const rowAno = String(row[COLS.ANO] || '').trim();
                 const rowMes = normalizarMes(row[COLS.MES]);
                 const rowLinha = norm(row[COLS.LINHA]);
-                
-                const passaAno = rowAno === filters.ano;
-                const passaMes = rowMes === filters.mes;
-                // Se filtro é "todas", aceita qualquer linha, senão compara
-                const passaLinha = (linhaFiltroNorm === 'todas') || (rowLinha === linhaFiltroNorm);
-                
-                return passaAno && passaMes && passaLinha;
+                return rowAno === filters.ano && rowMes === filters.mes && (linhaFiltroNorm === 'todas' || rowLinha === linhaFiltroNorm);
             });
 
             if (dadosFiltrados.length === 0) return null;
-            // Se houver apenas uma linha correspondente (ex: filtro por franquia específica)
             if (dadosFiltrados.length === 1) return dadosFiltrados[0];
 
-            // Se houver múltiplas linhas (ex: filtro "Todas"), consolida somando os valores
-            // Cria um array "fake" preenchido com zeros para somar
-            const consolidado = new Array(Object.keys(COLS).length).fill(0);
+            const consolidado = new Array(40).fill(0);
             dadosFiltrados.forEach(row => {
-                Object.values(COLS).forEach(colIndex => {
-                    // Soma apenas se for um valor numérico relevante
-                     if ([COLS.META_MES, COLS.META_DIARIA, COLS.VALOR_ORCAMENTOS, COLS.VALOR_PEDIDOS, COLS.PEDIDOS_FATURADOS_MES, COLS.PEDIDOS_EXPEDIDOS_MES].includes(colIndex)) {
-                         consolidado[colIndex] += parseValue(row[colIndex]);
-                     }
+                Object.values(COLS).forEach(colIdx => {
+                    if ([3,4,7,14,20,22,24,25,27,28,29,32,33,34,35,36,37,38].includes(colIdx)) {
+                        consolidado[colIdx] += parseValue(row[colIdx]);
+                    }
                 });
             });
             return consolidado;
         }
 
-        // Função Principal de Atualização
         async function updateDashboard(forceReload = false){
             if (forceReload || allData.length === 0) {
                 const success = await fetchSheetData();
@@ -715,481 +927,215 @@
             }
 
             const filters = getCurrentFilters();
-            // Linha de dados específica para o mês/ano/franquia selecionados (para KPIs de Vendas/Meta)
             const rowMensal = findDataRowForFilters(filters);
 
-            // --- CÁLCULO DOS TOTAIS GERAIS (Ignoram Ano/Mês) ---
-            // Filtra apenas pela linha selecionada (ou todas)
-            const linhaSelNorm = norm(filters.linha);
-            const rowsGeralLinha = allData.filter(r => 
-                (linhaSelNorm === 'todas') || (norm(r[COLS.LINHA]) === linhaSelNorm)
-            );
-
-            // Soma os pedidos em atraso e a liberar de TODA a base histórica da linha selecionada
-            const totalAtrasoGeral = rowsGeralLinha.reduce((s,r) => s + parseValue(r[COLS.PEDIDOS_ATRASADOS]), 0);
-            const totalLiberarGeral = rowsGeralLinha.reduce((s,r) => s + parseValue(r[COLS.PEDIDOS_A_LIBERAR]), 0);
-
-            // --- ATUALIZAÇÃO DOS CARDS DE KPI SUPERIORES ---
-            // Meta Mês
-            const metaMesVal = rowMensal ? parseValue(rowMensal[COLS.META_MES]) : 0;
-            document.getElementById('metaMes').textContent = formatCurrency(metaMesVal);
+            // KPIs Superiores
+            document.getElementById('metaMes').textContent = formatCurrency(rowMensal ? parseValue(rowMensal[COLS.META_MES]) : 0);
             document.getElementById('mesRef').textContent = filters.mesAnoRef;
-
-            // Meta Diária (Cálculo proporcional: Meta Mês / Dias no Mês * Dias Corridos)
-            const now = new Date();
-            const selectedAnoInt = parseInt(filters.ano);
-            const selectedMesInt = parseInt(filters.mes);
-            // Total de dias no mês selecionado
-            const diasNoMes = new Date(selectedAnoInt, selectedMesInt, 0).getDate();
-            let diasCorridos = diasNoMes; // Default: mês fechado
+            document.getElementById('valorVendas').textContent = formatCurrency(rowMensal ? parseValue(rowMensal[COLS.VALOR_PEDIDOS]) : 0);
             
-            // Se for o mês e ano atuais, usa o dia de hoje
-            if (selectedAnoInt === now.getFullYear() && selectedMesInt === (now.getMonth() + 1)) {
-                diasCorridos = now.getDate();
-            }
-            // Evita divisão por zero
-            const metaDiaAcumulada = diasNoMes > 0 ? (metaMesVal / diasNoMes) * diasCorridos : 0;
-            document.getElementById('metaDia').textContent = formatCurrency(metaDiaAcumulada);
+            // Pedidos Gerais (Somando toda a base filtrada pela linha)
+            const linhaSelNorm = norm(filters.linha);
+            const rowsGeral = allData.filter(r => (linhaSelNorm === 'todas') || (norm(r[COLS.LINHA]) === linhaSelNorm));
+            document.getElementById('pedidosAtraso').textContent = formatNumber(rowsGeral.reduce((s,r) => s + parseValue(r[COLS.PEDIDOS_ATRASADOS]), 0));
+            document.getElementById('pedidosLiberar').textContent = formatNumber(rowsGeral.reduce((s,r) => s + parseValue(r[COLS.PEDIDOS_A_LIBERAR]), 0));
+            document.getElementById('pedidosExpedidos').textContent = formatNumber(rowMensal ? parseValue(rowMensal[COLS.PEDIDOS_EXPEDIDOS_MES]) : 0);
 
-            // Valor em Vendas (Faturado no mês)
-            const valorVendasVal = rowMensal ? parseValue(rowMensal[COLS.VALOR_PEDIDOS]) : 0;
-            document.getElementById('valorVendas').textContent = formatCurrency(valorVendasVal);
-
-            // Pedidos em Atraso (Geral)
-            document.getElementById('pedidosAtraso').textContent = formatNumber(totalAtrasoGeral);
-            
-            // Pedidos a Liberar (Geral)
-            document.getElementById('pedidosLiberar').textContent = formatNumber(totalLiberarGeral);
-
-            // Pedidos Faturados/Expedidos (No mês)
-            // *Nota: O CSV original usava PEDIDOS_EXPEDIDOS_MES para "Faturados". Mantive essa lógica.
-            // Se quiser usar a soma de Faturados + Expedidos, ajustaria aqui.
-            const pedidosExpedidosVal = rowMensal ? parseValue(rowMensal[COLS.PEDIDOS_EXPEDIDOS_MES]) : 0;
-            document.getElementById('pedidosExpedidos').textContent = formatNumber(pedidosExpedidosVal);
-
-            // --- ATUALIZAÇÃO DOS GRÁFICOS ---
+            // Atualiza Componentes
             updateGaugeChart(filters.ano);
             updateHistoricoChart(filters.ano);
             updatePagamentoChart(filters);
             updateRegiaoChart(filters);
             updateCompraChart(filters);
-            
-            // --- ATUALIZAÇÃO DOS CARDS DE FRANQUIA ---
             updateFranquiasCards(filters);
         }
 
-        // ================= ATUALIZAÇÃO DOS CARDS DE FRANQUIA =================
-        function updateFranquiasCards(filters){
-            const franquiasMap = [
-                { id: 'bc', nome: 'FRA - Brasil Cacau' },
-                { id: 'cs', nome: 'FRA - Cacau Show' },
-                { id: 'kp', nome: 'FRA - Kopenhagen' },
-                { id: 'id', nome: 'IND - Industries' },
-                { id: 'pb', nome: 'PLB - PolyBee' }
-            ];
-
-            franquiasMap.forEach(franq => {
-                // Filtra os dados para a franquia, ano e mês específicos
-                const fRows = allData.filter(r => 
-                    String(r[COLS.ANO]).trim() === filters.ano &&
-                    normalizarMes(r[COLS.MES]) === filters.mes &&
-                    norm(r[COLS.LINHA]) === norm(franq.nome)
-                );
-
-                let qtdOrc=0, valOrc=0, qtdPed=0, valPed=0;
-                
-                if (fRows.length > 0) {
-                    // Soma os valores (caso haja múltiplas linhas por erro no CSV, por segurança)
-                    qtdOrc = fRows.reduce((s,r) => s + parseValue(r[COLS.QTDE_ORCAMENTOS]), 0);
-                    valOrc = fRows.reduce((s,r) => s + parseValue(r[COLS.VALOR_ORCAMENTOS]), 0);
-                    qtdPed = fRows.reduce((s,r) => s + parseValue(r[COLS.QTDE_PEDIDOS]), 0);
-                    valPed = fRows.reduce((s,r) => s + parseValue(r[COLS.VALOR_PEDIDOS]), 0);
-                }
-
-                // Cálculos
-                const ticket = qtdPed > 0 ? valPed / qtdPed : 0;
-                const conversao = valOrc > 0 ? (valPed / valOrc) * 100 : 0;
-
-                // Atualiza o DOM
-                document.getElementById(`${franq.id}-qtd-orc`).textContent = formatNumber(qtdOrc);
-                document.getElementById(`${franq.id}-val-orc`).textContent = formatCurrency(valOrc);
-                document.getElementById(`${franq.id}-qtd-ped`).textContent = formatNumber(qtdPed);
-                document.getElementById(`${franq.id}-val-ped`).textContent = formatCurrency(valPed);
-                document.getElementById(`${franq.id}-ticket`).textContent = formatCurrency(ticket);
-                document.getElementById(`${franq.id}-conversao`).textContent = formatPercent(conversao);
-                
-                // Atualiza a barra de conversão
-                const barFill = document.getElementById(`${franq.id}-conversao-bar`);
-                const width = Math.min(conversao, 100); // Limita a 100%
-                barFill.style.width = `${width}%`;
-            });
-        }
-
-        // ================= GRÁFICO: VELOCÍMETRO (Estilo "Enchimento") =================
+        // ================= GRÁFICOS E CARDS =================
         function updateGaugeChart(ano) {
             const canvas = document.getElementById('gaugeChart');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
-
-            // 1. Define a Meta Anual e o Total Vendido no Ano
-            const metaAnual = METAS_ANUAIS[ano] || 10000000; // Fallback se ano não definido
-            
-            // Filtra todas as vendas do ano selecionado (todas as linhas, todos os meses)
+            const metaAnual = METAS_ANUAIS[ano] || 10000000;
             const rowsAno = allData.filter(r => String(r[COLS.ANO]).trim() === ano);
             const totalVendidoAno = rowsAno.reduce((s, r) => s + parseValue(r[COLS.VALOR_PEDIDOS]), 0);
-            
-            // Calcula a porcentagem
-            let percentage = (totalVendidoAno / metaAnual) * 100;
-            // Limita visualmente entre 0% e 100% para o gráfico não quebrar, 
-            // mas o valor numérico real pode passar.
-            const visualPercentage = Math.min(Math.max(percentage, 0), 100);
-            const remaining = 100 - visualPercentage;
+            const visualPercentage = Math.min(Math.max((totalVendidoAno / metaAnual) * 100, 0), 100);
 
-            // Atualiza textos do Gauge
             document.getElementById('gaugeValor').textContent = formatCurrency(totalVendidoAno);
-            document.getElementById('gaugeMeta').textContent = `Meta ${ano}: ${formatShortCurrency(metaAnual)} (${percentage.toFixed(1)}%)`;
-
-            // Define a cor do gradiente baseado no progresso
-            let startColor, endColor;
-            if (visualPercentage < 40) {
-                startColor = '#ef4444'; endColor = '#f87171'; // Vermelho
-            } else if (visualPercentage < 80) {
-                startColor = '#f59e0b'; endColor = '#fbbf24'; // Amarelo/Laranja
-            } else {
-                startColor = '#22c55e'; endColor = '#4ade80'; // Verde
-            }
-
-            // Cria o gradiente no canvas
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-            gradient.addColorStop(0, startColor);
-            gradient.addColorStop(1, endColor);
-
-            // Configuração do Chart.js
-            const data = {
-                datasets: [{
-                    data: [visualPercentage, remaining],
-                    backgroundColor: [
-                        gradient, // Parte preenchida (colorida)
-                        'rgba(255, 255, 255, 0.05)' // Parte vazia (trilha escura)
-                    ],
-                    borderWidth: 0,
-                    borderRadius: [10, 0] // Arredonda a ponta da barra colorida
-                }]
-            };
-
-            const options = {
-                responsive: true,
-                maintainAspectRatio: false,
-                rotation: -90,    // Começa do topo (para semicírculo)
-                circumference: 180, // Apenas meio círculo
-                cutout: '82%',    // Espessura da barra (quanto maior, mais fina)
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: false } // Desabilita tooltip no gauge
-                }
-            };
+            document.getElementById('gaugeMeta').textContent = `Meta ${ano}: ${formatShortCurrency(metaAnual)}`;
 
             if (gaugeChart) gaugeChart.destroy();
-            gaugeChart = new Chart(ctx, { type: 'doughnut', data: data, options: options });
-        }
-
-        // ================= GRÁFICO: HISTÓRICO MENSAL =================
-        function updateHistoricoChart(ano) {
-            const canvas = document.getElementById('historicoChart');
-            if (!canvas) return;
-            
-            const labelsMeses = MESES_NOMES_COMPLETOS.map(m => m.substring(0, 3)); // Jan, Fev...
-            
-            const dataOrc = [];
-            const dataVen = [];
-            const dataMeta = [];
-
-            // Itera pelos 12 meses para coletar os dados do ano selecionado
-            for (let i = 1; i <= 12; i++) {
-                const mesNum = String(i).padStart(2, '0');
-                // Filtra dados do mês/ano (todas as linhas somadas)
-                const rowsMes = allData.filter(r => 
-                    String(r[COLS.ANO]).trim() === ano && 
-                    normalizarMes(r[COLS.MES]) === mesNum
-                );
-                
-                // Consolida os valores do mês
-                dataOrc.push(rowsMes.reduce((s,r) => s + parseValue(r[COLS.VALOR_ORCAMENTOS]), 0));
-                dataVen.push(rowsMes.reduce((s,r) => s + parseValue(r[COLS.VALOR_PEDIDOS]), 0));
-                // A meta geralmente é a mesma para todas as linhas no mesmo mês no seu CSV,
-                // pegamos a do primeiro registro ou somamos se a lógica de negócio for soma.
-                // Assumindo soma das metas das linhas:
-                dataMeta.push(rowsMes.reduce((s,r) => s + parseValue(r[COLS.META_MES]), 0));
-            }
-
-            // Configuração Visual Profissional
-            const commonOptions = {
-                borderWidth: 3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                tension: 0.3 // Curva suave nas linhas
-            };
-
-            const data = {
-                labels: labelsMeses,
-                datasets: [
-                    {
-                        label: 'Orçamentos (R$)',
-                        data: dataOrc,
-                        borderColor: '#6366f1', // Indigo
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        fill: true,
-                        ...commonOptions
-                    },
-                    {
-                        label: 'Vendas (R$)',
-                        data: dataVen,
-                        borderColor: '#22c55e', // Verde
-                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                        fill: true,
-                        ...commonOptions
-                    },
-                    {
-                        label: 'Meta (R$)',
-                        data: dataMeta,
-                        borderColor: '#f59e0b', // Laranja
-                        borderDash: [5, 5], // Linha tracejada
-                        fill: false,
-                        pointStyle: 'rectRot',
-                        ...commonOptions,
-                        borderWidth: 2
-                    }
-                ]
-            };
-
-            const options = {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { color: '#94a3b8', usePointStyle: true, font: { size: 12 } }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(15, 15, 30, 0.9)',
-                        titleColor: '#ffffff',
-                        bodyColor: '#e2e8f0',
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
-                        borderWidth: 1,
-                        padding: 12,
-                        callbacks: {
-                            label: (ctx) => ` ${ctx.dataset.label}: ${formatCurrency(ctx.raw)}`
-                        }
-                    }
+            gaugeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [visualPercentage, 100 - visualPercentage],
+                        backgroundColor: ['#6366f1', 'rgba(255, 255, 255, 0.05)'],
+                        borderWidth: 0,
+                        borderRadius: [10, 0]
+                    }]
                 },
-                scales: {
-                    x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#94a3b8' }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: {
-                            color: '#94a3b8',
-                            callback: (value) => formatShortCurrency(value) // Abrevia valores no eixo Y
-                        }
-                    }
-                }
-            };
-
-            if (historicoChart) historicoChart.destroy();
-            historicoChart = new Chart(canvas.getContext('2d'), { type: 'line', data: data, options: options });
-        }
-
-        // ================= GRÁFICO: FORMAS DE PAGAMENTO =================
-        function updatePagamentoChart(filters) {
-            const canvas = document.getElementById('pagamentoChart');
-            if (!canvas) return;
-
-            // Obtém os dados filtrados (consolidado do mês/ano/linha)
-            const row = findDataRowForFilters(filters);
-            
-            // Extrai os valores
-            const valPix = row ? parseValue(row[COLS.VALORES_PIX]) : 0;
-            const valCredito = row ? parseValue(row[COLS.VALORES_CARTAO_CREDITO]) : 0;
-            const valBoleto = row ? parseValue(row[COLS.VALORES_BOLETO]) : 0;
-            const total = valPix + valCredito + valBoleto;
-
-            // Cores vibrantes para os segmentos
-            const colors = ['#22c55e', '#3b82f6', '#a855f7']; // Verde, Azul, Roxo
-
-            const data = {
-                labels: ['PIX', 'Cartão Crédito', 'Boleto'],
-                datasets: [{
-                    data: [valPix, valCredito, valBoleto],
-                    backgroundColor: colors,
-                    borderColor: 'rgba(10, 10, 20, 1)', // Borda escura para separar
-                    borderWidth: 2,
-                    hoverOffset: 6
-                }]
-            };
-
-            const options = {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '65%', // Rosquinha mais fina
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: '#94a3b8', padding: 15, usePointStyle: true }
-                    },
-                    tooltip: {
-                         backgroundColor: 'rgba(15, 15, 30, 0.9)',
-                         callbacks: {
-                             label: (ctx) => {
-                                 const val = ctx.raw;
-                                 const perc = total > 0 ? (val / total * 100).toFixed(1) + '%' : '0%';
-                                 return ` ${ctx.label}: ${formatCurrency(val)} (${perc})`;
-                             }
-                         }
-                    }
-                }
-            };
-
-            if (pagamentoChart) pagamentoChart.destroy();
-            pagamentoChart = new Chart(canvas.getContext('2d'), { type: 'doughnut', data: data, options: options });
-        }
-
-        // ================= GRÁFICO: PEDIDOS POR REGIÃO =================
-        function updateRegiaoChart(filters) {
-             const canvas = document.getElementById('regiaoChart');
-             if (!canvas) return;
-             
-             const row = findDataRowForFilters(filters);
-             
-             const regions = [
-                 { label: 'Centro-Oeste', val: row ? parseValue(row[COLS.REGIAO_CENTRO_OESTE]) : 0 },
-                 { label: 'Nordeste',    val: row ? parseValue(row[COLS.REGIAO_NORDESTE]) : 0 },
-                 { label: 'Norte',       val: row ? parseValue(row[COLS.REGIAO_NORTE]) : 0 },
-                 { label: 'Sudeste',     val: row ? parseValue(row[COLS.REGIAO_SUDESTE]) : 0 },
-                 { label: 'Sul',         val: row ? parseValue(row[COLS.REGIAO_SUL]) : 0 }
-             ];
-
-             // Ordena por valor decrescente para visual melhor
-             regions.sort((a, b) => b.val - a.val);
-
-             const data = {
-                 labels: regions.map(r => r.label),
-                 datasets: [{
-                     label: 'Nº Pedidos',
-                     data: regions.map(r => r.val),
-                     // Gradiente vertical nas barras
-                     backgroundColor: (ctx) => {
-                        const bg = ctx.chart.ctx.createLinearGradient(0, 0, 0, 300);
-                        bg.addColorStop(0, '#6366f1'); // Indigo forte
-                        bg.addColorStop(1, 'rgba(99, 102, 241, 0.3)'); // Indigo transparente
-                        return bg;
-                     },
-                     borderRadius: 6, // Barras arredondadas
-                     borderWidth: 0,
-                     barPercentage: 0.6
-                 }]
-             };
-
-             const options = {
-                 responsive: true,
-                 maintainAspectRatio: false,
-                 indexAxis: 'y', // Gráfico de barras horizontal
-                 plugins: {
-                     legend: { display: false },
-                     tooltip: {
-                         backgroundColor: 'rgba(15, 15, 30, 0.9)',
-                         callbacks: { label: (ctx) => ` Pedidos: ${formatNumber(ctx.raw)}` }
-                     }
-                 },
-                 scales: {
-                     x: {
-                         grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                         ticks: { color: '#94a3b8', font: { size: 11 } }
-                     },
-                     y: {
-                         grid: { display: false },
-                         ticks: { color: '#e2e8f0', font: { weight: '500' } }
-                     }
-                 }
-             };
-
-             if (regiaoChart) regiaoChart.destroy();
-             regiaoChart = new Chart(canvas.getContext('2d'), { type: 'bar', data: data, options: options });
-        }
-
-        // ================= GRÁFICO: PRIMEIRA COMPRA vs RECOMPRA =================
-        function updateCompraChart(filters) {
-            const canvas = document.getElementById('compraChart');
-            if (!canvas) return;
-            
-            const row = findDataRowForFilters(filters);
-            const valPrimeira = row ? parseValue(row[COLS.PRIMEIRA_COMPRA]) : 0;
-            const valRecompra = row ? parseValue(row[COLS.RECOMPRA]) : 0;
-            const total = valPrimeira + valRecompra;
-
-            const data = {
-                labels: ['Primeira Compra', 'Recompra'],
-                datasets: [{
-                    data: [valPrimeira, valRecompra],
-                    backgroundColor: ['#f59e0b', '#0ea5e9'], // Laranja e Azul claro
-                    borderColor: 'rgba(10, 10, 20, 1)',
-                    borderWidth: 2,
-                }]
-            };
-
-            const options = {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: '#94a3b8', padding: 15, usePointStyle: true }
-                    },
-                    tooltip: {
-                         backgroundColor: 'rgba(15, 15, 30, 0.9)',
-                         callbacks: {
-                             label: (ctx) => {
-                                 const val = ctx.raw;
-                                 const perc = total > 0 ? (val / total * 100).toFixed(1) + '%' : '0%';
-                                 return ` ${ctx.label}: ${formatNumber(val)} pedidos (${perc})`;
-                             }
-                         }
-                    }
-                }
-            };
-
-            if (compraChart) compraChart.destroy();
-            compraChart = new Chart(canvas.getContext('2d'), { type: 'pie', data: data, options: options });
-        }
-
-        // ================= INICIALIZAÇÃO =================
-        function initSelects() {
-            // Preenche o select de Meses
-            const mesSelect = document.getElementById('filterMes');
-            const now = new Date();
-            const currentMonth = now.getMonth(); // 0-indexado (0 = Jan)
-
-            MESES_NOMES_COMPLETOS.forEach((nome, index) => {
-                const option = document.createElement('option');
-                option.value = String(index + 1).padStart(2, '0'); // "01", "02"...
-                option.text = nome;
-                if (index === currentMonth) {
-                    option.selected = true;
-                }
-                mesSelect.appendChild(option);
+                options: { rotation: -90, circumference: 180, cutout: '80%', plugins: { legend: { display: false } } }
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initSelects();
-            updateDashboard(true); // Primeira carga forçada
+        function updateHistoricoChart(ano) {
+            const canvas = document.getElementById('historicoChart');
+            if (!canvas) return;
+            const dataOrc = [], dataVen = [], dataMeta = [];
+            for (let i = 1; i <= 12; i++) {
+                const mesNum = String(i).padStart(2, '0');
+                const rowsMes = allData.filter(r => String(r[COLS.ANO]).trim() === ano && normalizarMes(r[COLS.MES]) === mesNum);
+                dataOrc.push(rowsMes.reduce((s,r) => s + parseValue(r[COLS.VALOR_ORCAMENTOS]), 0));
+                dataVen.push(rowsMes.reduce((s,r) => s + parseValue(r[COLS.VALOR_PEDIDOS]), 0));
+                dataMeta.push(rowsMes.reduce((s,r) => s + parseValue(r[COLS.META_MES]), 0));
+            }
+            if (historicoChart) historicoChart.destroy();
+            historicoChart = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: MESES_NOMES_COMPLETOS.map(m => m.substring(0,3)),
+                    datasets: [
+                        { label: 'Vendas', data: dataVen, borderColor: '#22c55e', tension: 0.3, fill: true, backgroundColor: 'rgba(34, 197, 94, 0.1)' },
+                        { label: 'Meta', data: dataMeta, borderColor: '#f59e0b', borderDash: [5,5], tension: 0.3 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+        }
 
-            // Auto-refresh a cada 5 minutos (300000 ms) sem travar a tela
-            setInterval(() => updateDashboard(true), 300000);
+        function updatePagamentoChart(filters) {
+            const canvas = document.getElementById('pagamentoChart');
+            const row = findDataRowForFilters(filters);
+            const vals = [parseValue(row?.[COLS.VALORES_PIX]), parseValue(row?.[COLS.VALORES_CARTAO_CREDITO]), parseValue(row?.[COLS.VALORES_BOLETO])];
+            if (pagamentoChart) pagamentoChart.destroy();
+            pagamentoChart = new Chart(canvas.getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: ['PIX', 'Cartão', 'Boleto'], datasets: [{ data: vals, backgroundColor: ['#22c55e', '#3b82f6', '#a855f7'] }] },
+                options: { maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        function updateRegiaoChart(filters) {
+            const canvas = document.getElementById('regiaoChart');
+            const row = findDataRowForFilters(filters);
+            const data = [parseValue(row?.[COLS.REGIAO_CENTRO_OESTE]), parseValue(row?.[COLS.REGIAO_NORDESTE]), parseValue(row?.[COLS.REGIAO_NORTE]), parseValue(row?.[COLS.REGIAO_SUDESTE]), parseValue(row?.[COLS.REGIAO_SUL])];
+            if (regiaoChart) regiaoChart.destroy();
+            regiaoChart = new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: { labels: ['CO', 'NE', 'N', 'SE', 'S'], datasets: [{ label: 'Pedidos', data: data, backgroundColor: '#6366f1', borderRadius: 5 }] },
+                options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function updateCompraChart(filters) {
+            const canvas = document.getElementById('compraChart');
+            const row = findDataRowForFilters(filters);
+            if (compraChart) compraChart.destroy();
+            compraChart = new Chart(canvas.getContext('2d'), {
+                type: 'pie',
+                data: { labels: ['Primeira', 'Recompra'], datasets: [{ data: [parseValue(row?.[COLS.PRIMEIRA_COMPRA]), parseValue(row?.[COLS.RECOMPRA])], backgroundColor: ['#f59e0b', '#0ea5e9'] }] },
+                options: { maintainAspectRatio: false }
+            });
+        }
+
+        function updateFranquiasCards(filters){
+            const map = [{id:'bc',n:'FRA - Brasil Cacau'},{id:'cs',n:'FRA - Cacau Show'},{id:'kp',n:'FRA - Kopenhagen'},{id:'id',n:'IND - Industries'},{id:'pb',n:'PLB - PolyBee'}];
+            map.forEach(f => {
+                const rows = allData.filter(r => String(r[COLS.ANO]) === filters.ano && normalizarMes(r[COLS.MES]) === filters.mes && norm(r[COLS.LINHA]) === norm(f.n));
+                const vPed = rows.reduce((s,r) => s + parseValue(r[COLS.VALOR_PEDIDOS]), 0);
+                const vOrc = rows.reduce((s,r) => s + parseValue(r[COLS.VALOR_ORCAMENTOS]), 0);
+                const qPed = rows.reduce((s,r) => s + parseValue(r[COLS.QTDE_PEDIDOS]), 0);
+                document.getElementById(`${f.id}-qtd-orc`).textContent = formatNumber(rows.reduce((s,r) => s + parseValue(r[COLS.QTDE_ORCAMENTOS]), 0));
+                document.getElementById(`${f.id}-val-orc`).textContent = formatCurrency(vOrc);
+                document.getElementById(`${f.id}-qtd-ped`).textContent = formatNumber(qPed);
+                document.getElementById(`${f.id}-val-ped`).textContent = formatCurrency(vPed);
+                document.getElementById(`${f.id}-ticket`).textContent = formatCurrency(qPed > 0 ? vPed / qPed : 0);
+                const conv = vOrc > 0 ? (vPed / vOrc) * 100 : 0;
+                document.getElementById(`${f.id}-conversao`).textContent = formatPercent(conv);
+                document.getElementById(`${f.id}-conversao-bar`).style.width = `${Math.min(conv, 100)}%`;
+            });
+        }
+
+        // ================= MENUS E INTERFACE =================
+        function toggleMenu(menuId, iconId) {
+            const menu = document.getElementById(menuId);
+            const icon = document.getElementById(iconId);
+            
+            // Fecha outros menus
+            document.querySelectorAll('.filter-dropdown').forEach(m => {
+                if(m.id !== menuId) m.classList.remove('active');
+            });
+            document.querySelectorAll('.ph-caret-down').forEach(i => {
+                if(i.id !== iconId) i.style.transform = 'rotate(0deg)';
+            });
+
+            menu.classList.toggle('active');
+            icon.style.transform = menu.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        function applyAndClose() {
+            updateDashboard(true);
+            document.getElementById('filterMenu').classList.remove('active');
+            document.getElementById('filterIcon').style.transform = 'rotate(0deg)';
+        }
+
+        function toggleTheme() {
+            const checkbox = document.getElementById('themeCheckbox');
+            const root = document.documentElement;
+            if (checkbox.checked) {
+                root.style.setProperty('--bg-main', '#0a0a14');
+                root.style.setProperty('--card-bg', 'rgba(20, 20, 40, 0.7)');
+                root.style.setProperty('--text-primary', '#ffffff');
+                document.getElementById('logoImg').src = 'logo-policryl-branco.png';
+            } else {
+                root.style.setProperty('--bg-main', '#f0f2f5');
+                root.style.setProperty('--card-bg', 'rgba(255, 255, 255, 0.9)');
+                root.style.setProperty('--text-primary', '#1e293b');
+                document.getElementById('logoImg').src = 'logo-policryl-preto.png';
+            }
+        }
+
+        // ================= TIMER =================
+        function startTimer(durationMs) {
+            clearInterval(countdownTimer);
+            timeLeft = durationMs / 1000;
+            countdownTimer = setInterval(() => {
+                const min = Math.floor(timeLeft / 60);
+                const sec = Math.floor(timeLeft % 60);
+                document.getElementById('timerDisplay').innerText = `REFRESH EM: ${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+                if (--timeLeft < 0) { updateDashboard(true); startTimer(durationMs); }
+            }, 1000);
+        }
+
+        function setNewInterval() {
+            const msecs = parseInt(document.getElementById('updateInterval').value);
+            startTimer(msecs);
+            document.getElementById('updateMenu').classList.remove('active');
+            document.getElementById('updateIcon').style.transform = 'rotate(0deg)';
+        }
+
+        // ================= INICIALIZAÇÃO =================
+        document.addEventListener('DOMContentLoaded', () => {
+            const mesSelect = document.getElementById('filterMes');
+            const currentMonth = new Date().getMonth();
+            MESES_NOMES_COMPLETOS.forEach((nome, i) => {
+                const opt = document.createElement('option');
+                opt.value = String(i + 1).padStart(2, '0');
+                opt.text = nome;
+                if (i === currentMonth) opt.selected = true;
+                mesSelect.appendChild(opt);
+            });
+            updateDashboard(true);
+            startTimer(300000); // 5 min padrão
         });
+
+        // Fecha menus ao clicar fora
+        window.onclick = function(event) {
+            if (!event.target.closest('.control-wrapper')) {
+                document.querySelectorAll('.filter-dropdown').forEach(m => m.classList.remove('active'));
+                document.querySelectorAll('.ph-caret-down').forEach(i => i.style.transform = 'rotate(0deg)');
+            }
+        }
     </script>
 </body>
 </html>
