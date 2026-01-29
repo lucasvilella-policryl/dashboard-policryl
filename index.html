@@ -698,6 +698,18 @@
             background: #fff;
             box-shadow: 0 10px 40px -10px rgba(255, 215, 0, 0.3) !important;
         }
+        .franquia-icon img {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Se quiser remover o fundo colorido original para o SVG aparecer melhor */
+        .franquia-card.bc .franquia-icon { background: transparent; box-shadow: none; }
+        .franquia-card.cs .franquia-icon { background: transparent; box-shadow: none; }
+        .franquia-card.kp .franquia-icon { background: transparent; box-shadow: none; }
+        .franquia-card.id .franquia-icon { background: transparent; box-shadow: none; }
+        .franquia-card.pb .franquia-icon { background: transparent; box-shadow: none; }
     </style>
 </head>
 <body>
@@ -839,7 +851,9 @@
             <div class="franquias-grid">
                 <div class="franquia-card bc">
                     <div class="franquia-header">
-                        <div class="franquia-icon">BC</div>
+                        <div class="franquia-icon">
+                            <img src="assets/clients/brasilcacau-square.svg" alt="Brasil Cacau" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;">
+                        </div>
                         <div class="franquia-name">Brasil Cacau</div>
                     </div>
                     <div class="franquia-metrics">
@@ -860,7 +874,9 @@
 
                 <div class="franquia-card cs">
                     <div class="franquia-header">
-                        <div class="franquia-icon">CS</div>
+                        <div class="franquia-icon">
+                            <img src="assets/clients/cacaushow-square.svg" alt="Cacau Show" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;">
+                        </div>
                         <div class="franquia-name">Cacau Show</div>
                     </div>
                     <div class="franquia-metrics">
@@ -881,7 +897,9 @@
 
                 <div class="franquia-card kp">
                     <div class="franquia-header">
-                        <div class="franquia-icon">KP</div>
+                        <div class="franquia-icon">
+                            <img src="assets/clients/kopenhagen-square.svg" alt="Kopenhagen" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;">
+                        </div>
                         <div class="franquia-name">Kopenhagen</div>
                     </div>
                     <div class="franquia-metrics">
@@ -902,7 +920,9 @@
 
                 <div class="franquia-card id">
                     <div class="franquia-header">
-                        <div class="franquia-icon">ID</div>
+                        <div class="franquia-icon">
+                            <img src="assets/clients/industries-square.svg" alt="Industries" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;">
+                        </div>
                         <div class="franquia-name">Industries</div>
                     </div>
                     <div class="franquia-metrics">
@@ -923,7 +943,9 @@
 
                 <div class="franquia-card pb">
                     <div class="franquia-header">
-                        <div class="franquia-icon">PB</div>
+                        <div class="franquia-icon">
+                            <img src="assets/clients/polybee-square.svg" alt="PolyBee" style="width: 100%; height: 100%; object-fit: contain; padding: 4px;">
+                        </div>
                         <div class="franquia-name">PolyBee</div>
                     </div>
                     <div class="franquia-metrics">
