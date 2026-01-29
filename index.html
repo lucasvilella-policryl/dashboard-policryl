@@ -224,7 +224,7 @@
             letter-spacing: 1.2px;
             opacity: 0.8;
         }
-        }
+
         .gauge-meta-target {
             font-size: 13px; color: var(--text-muted); margin-top: 4px; font-weight: 500;
         }
@@ -759,29 +759,29 @@
                     <div class="kpi-subtitle" id="mesRef">--/--</div>
                 </div>
                 <div class="kpi-card primary">
-                    <div class="kpi-label">Meta Diária (Acumulada)</div>
+                    <div class="kpi-label">Meta Diária</div>
                     <div class="kpi-value" id="metaDia">R$ 0</div>
-                    <div class="kpi-subtitle">Esperado até hoje</div>
+                    <div class="kpi-subtitle">Valor faltante para hoje</div>
                 </div>
                 <div class="kpi-card success">
                     <div class="kpi-label">Valor em Vendas</div>
                     <div class="kpi-value" id="valorVendas">R$ 0</div>
-                    <div class="kpi-subtitle">Total Faturado no Mês</div>
-                </div>
-                <div class="kpi-card danger">
-                    <div class="kpi-label">Pedidos em Atraso</div>
-                    <div class="kpi-value" id="pedidosAtraso">0</div>
-                    <div class="kpi-subtitle">Atenção Necessária (Geral)</div>
+                    <div class="kpi-subtitle">Total vendido no Mês</div>
                 </div>
                 <div class="kpi-card warning">
-                    <div class="kpi-label">Pedidos à Liberar</div>
+                    <div class="kpi-label">Pedidos em Casa</div>
                     <div class="kpi-value" id="pedidosLiberar">0</div>
-                    <div class="kpi-subtitle">Aguardando Aprovação (Geral)</div>
+                    <div class="kpi-subtitle">Aguardando Aprovação</div>
+                </div>
+                <div class="kpi-card danger">
+                    <div class="kpi-label">Pedidos à Liberar</div>
+                    <div class="kpi-value" id="pedidosAtraso">0</div>
+                    <div class="kpi-subtitle">Atenção Necessária</div>
                 </div>
                 <div class="kpi-card info">
                     <div class="kpi-label">Pedidos Faturados</div>
                     <div class="kpi-value" id="pedidosExpedidos">0</div>
-                    <div class="kpi-subtitle">Na Expedição/Expedidos (Mês)</div>
+                    <div class="kpi-subtitle">Expedição/Expedidos</div>
                 </div>
             </div>
         </div>
@@ -927,8 +927,8 @@
     </div>
 
     <script>
+        
 
-        // ================= CONFIGURAÇÕES GLOBAIS =================
         // ================= CONFIGURAÇÕES GLOBAIS =================
         const CSV_URL_DASH = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQKstKflONSWvQ6xfVkMdM53mveopLXVGNv9CyQT0kRbjdI7IGIVzvvMPLSXNyQ-xZTQEvDmKr1jI_I/pub?gid=1199309873&single=true&output=csv';
 
@@ -1060,6 +1060,59 @@
             document.getElementById('metaMes').textContent = formatCurrency(rowMensal ? parseValue(rowMensal[COLS.META_MES]) : 0);
             document.getElementById('valorVendas').textContent = formatCurrency(rowMensal ? parseValue(rowMensal[COLS.VALOR_PEDIDOS]) : 0);
             document.getElementById('mesRef').textContent = filters.mesAnoRef;
+
+            // 1. Meta do Mês
+            const metaMesVal = rowMensal ? parseValue(rowMensal[COLS.META_MES]) : 0;
+            document.getElementById('metaMes').textContent = formatCurrency(metaMesVal);
+            document.getElementById('mesRef').textContent = filters.mesAnoRef;
+
+            // 2. Valor em Vendas (Realizado)
+            const valorVendasVal = rowMensal ? parseValue(rowMensal[COLS.VALOR_PEDIDOS]) : 0;
+            document.getElementById('valorVendas').textContent = formatCurrency(valorVendasVal);
+
+            // 3. Lógica: O QUE FALTA PARA A META (Gap Analysis)
+            const faltaParaMeta = metaMesVal - valorVendasVal;
+            const cardMetaLabel = document.querySelector('.kpi-card:nth-child(2) .kpi-label'); // Seleciona o Label do 2º card
+            const cardMetaSub = document.querySelector('.kpi-card:nth-child(2) .kpi-subtitle'); // Seleciona o Subtítulo
+            const cardMetaValue = document.getElementById('metaDia');
+            const cardContainer = cardMetaValue.parentElement; // O próprio card para mudar cor da borda se quiser
+
+            if (faltaParaMeta > 0) {
+                // Cenário: Ainda não bateu a meta
+                cardMetaLabel.textContent = "Falta para a Meta";
+                cardMetaValue.textContent = formatCurrency(faltaParaMeta);
+                cardMetaValue.style.color = '#ffffff'; // Branco normal
+                
+                // Cálculo de esforço diário restante (Opcional, mas útil)
+                const now = new Date();
+                const anoF = parseInt(filters.ano);
+                const mesF = parseInt(filters.mes);
+                const diasNoMes = new Date(anoF, mesF, 0).getDate();
+                let diasRestantes = 0;
+
+                // Se é o mês atual, calcula quantos dias faltam
+                if (anoF === now.getFullYear() && mesF === (now.getMonth() + 1)) {
+                    diasRestantes = diasNoMes - now.getDate() + 1; // +1 para incluir hoje
+                }
+                
+                if (diasRestantes > 0) {
+                    const esforcoDiario = faltaParaMeta / diasRestantes;
+                    cardMetaSub.textContent = `Necessário: ${formatCurrency(esforcoDiario)}/dia`;
+                } else {
+                    cardMetaSub.textContent = "Para atingir 100%";
+                }
+
+            } else {
+                // Cenário: META BATIDA! (Valor negativo significa sobra)
+                cardMetaLabel.textContent = "Meta Superada!";
+                cardMetaValue.textContent = "+" + formatCurrency(Math.abs(faltaParaMeta));
+                cardMetaValue.style.color = '#22c55e'; // Verde Neon
+                cardMetaSub.textContent = "Parabéns pelo resultado!";
+                
+                // Opcional: Adicionar classe de sucesso ao card
+                cardContainer.classList.remove('primary');
+                cardContainer.classList.add('success');
+            }
 
             // Pedidos Gerais
             const linhaSelNorm = norm(filters.linha);
