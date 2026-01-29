@@ -662,7 +662,7 @@
         <header class="header">
             <div class="logo-section">
                 <div class="logo">
-                    <img src="logo-policryl-branco-x2.png" alt="Logo Policryl" id="logoImg">
+                    <img src="logo-policryl-branco.png" alt="Logo Policryl" id="logoImg">
                 </div>
             </div>
             
@@ -1070,48 +1070,77 @@
             const valorVendasVal = rowMensal ? parseValue(rowMensal[COLS.VALOR_PEDIDOS]) : 0;
             document.getElementById('valorVendas').textContent = formatCurrency(valorVendasVal);
 
-            // 3. Lógica: O QUE FALTA PARA A META (Gap Analysis)
+            // 3. Lógica: META DIÁRIA DINÂMICA (Recálculo Inteligente)
             const faltaParaMeta = metaMesVal - valorVendasVal;
-            const cardMetaLabel = document.querySelector('.kpi-card:nth-child(2) .kpi-label'); // Seleciona o Label do 2º card
-            const cardMetaSub = document.querySelector('.kpi-card:nth-child(2) .kpi-subtitle'); // Seleciona o Subtítulo
+            const cardMetaLabel = document.querySelector('.kpi-card:nth-child(2) .kpi-label');
+            const cardMetaSub = document.querySelector('.kpi-card:nth-child(2) .kpi-subtitle');
             const cardMetaValue = document.getElementById('metaDia');
-            const cardContainer = cardMetaValue.parentElement; // O próprio card para mudar cor da borda se quiser
+            const cardContainer = cardMetaValue.parentElement;
 
-            if (faltaParaMeta > 0) {
-                // Cenário: Ainda não bateu a meta
-                cardMetaLabel.textContent = "Falta para a Meta";
-                cardMetaValue.textContent = formatCurrency(faltaParaMeta);
-                cardMetaValue.style.color = '#ffffff'; // Branco normal
-                
-                // Cálculo de esforço diário restante (Opcional, mas útil)
-                const now = new Date();
-                const anoF = parseInt(filters.ano);
-                const mesF = parseInt(filters.mes);
-                const diasNoMes = new Date(anoF, mesF, 0).getDate();
-                let diasRestantes = 0;
+            // Variáveis de Tempo
+            const now = new Date();
+            const anoF = parseInt(filters.ano);
+            const mesF = parseInt(filters.mes);
+            // Total de dias no mês selecionado (ex: Jan = 31)
+            const diasNoMes = new Date(anoF, mesF, 0).getDate();
+            
+            let diasRestantes = 0;
+            let metaDiariaNecessaria = 0;
 
-                // Se é o mês atual, calcula quantos dias faltam
-                if (anoF === now.getFullYear() && mesF === (now.getMonth() + 1)) {
-                    diasRestantes = diasNoMes - now.getDate() + 1; // +1 para incluir hoje
-                }
-                
-                if (diasRestantes > 0) {
-                    const esforcoDiario = faltaParaMeta / diasRestantes;
-                    cardMetaSub.textContent = `Necessário: ${formatCurrency(esforcoDiario)}/dia`;
-                } else {
-                    cardMetaSub.textContent = "Para atingir 100%";
-                }
-
+            // Verifica se é o mês atual, passado ou futuro
+            if (anoF === now.getFullYear() && mesF === (now.getMonth() + 1)) {
+                // Mês Atual: Conta quantos dias faltam (incluindo hoje para ter chance de vender)
+                diasRestantes = diasNoMes - now.getDate() + 1;
+            } else if (now > new Date(anoF, mesF - 1, diasNoMes)) {
+                // Mês Passado: Dias restantes é 0 (mês fechado)
+                diasRestantes = 0;
             } else {
-                // Cenário: META BATIDA! (Valor negativo significa sobra)
-                cardMetaLabel.textContent = "Meta Superada!";
+                // Mês Futuro: Dias restantes é o mês todo
+                diasRestantes = diasNoMes;
+            }
+
+            // Evita divisão por zero
+            if (diasRestantes > 0 && faltaParaMeta > 0) {
+                metaDiariaNecessaria = faltaParaMeta / diasRestantes;
+            }
+
+            // === ATUALIZAÇÃO DO CARD ===
+            
+            if (faltaParaMeta <= 0) {
+                // CENÁRIO 1: META JÁ BATIDA (Show!)
+                cardContainer.className = 'kpi-card success'; // Fica verde
+                cardMetaLabel.textContent = "Meta Mensal Batida!";
                 cardMetaValue.textContent = "+" + formatCurrency(Math.abs(faltaParaMeta));
-                cardMetaValue.style.color = '#22c55e'; // Verde Neon
-                cardMetaSub.textContent = "Parabéns pelo resultado!";
+                cardMetaValue.style.color = '#ffffff';
+                cardMetaSub.textContent = "Você superou o objetivo!";
+            } 
+            else if (diasRestantes === 0) {
+                // CENÁRIO 2: MÊS ACABOU E NÃO BATEU (Tristeza)
+                cardContainer.className = 'kpi-card danger'; // Fica vermelho
+                cardMetaLabel.textContent = "Faltou para a Meta";
+                cardMetaValue.textContent = formatCurrency(faltaParaMeta);
+                cardMetaValue.style.color = '#ffffff';
+                cardMetaSub.textContent = "Mês encerrado";
+            } 
+            else {
+                // CENÁRIO 3: MÊS CORRENDO (O Jogo continua)
+                // Aqui aplicamos a lógica que você pediu:
+                // Se vendeu pouco ontem, essa 'metaDiariaNecessaria' vai subir automaticamente hoje.
                 
-                // Opcional: Adicionar classe de sucesso ao card
-                cardContainer.classList.remove('primary');
-                cardContainer.classList.add('success');
+                cardContainer.className = 'kpi-card primary'; // Cor padrão (Indigo)
+                cardMetaLabel.textContent = "Meta Diária Necessária";
+                cardMetaValue.textContent = formatCurrency(metaDiariaNecessaria);
+                
+                // Muda a cor do texto para amarelo se a meta diária necessária ficar muito alta
+                // Exemplo: Se a meta diária necessária for 2x maior que a meta diária "normal" (média), alerta!
+                const metaDiariaPadrao = metaMesVal / diasNoMes;
+                if (metaDiariaNecessaria > (metaDiariaPadrao * 1.1)) {
+                    cardMetaValue.style.color = '#f59e0b'; // Amarelo (Atenção, o acumulado está pesado)
+                    cardMetaSub.textContent = "Acumulado alto! Acelerar vendas.";
+                } else {
+                    cardMetaValue.style.color = '#ffffff';
+                    cardMetaSub.textContent = `Para bater a meta em ${diasRestantes} dias`;
+                }
             }
 
             // Pedidos Gerais
