@@ -650,6 +650,54 @@
             color: #fff;
             text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
         }
+
+        /* === EFEITO META BATIDA (TROFÉU) === */
+        /* O Selo do Troféu (Escondido por padrão) */
+        .trophy-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #FFD700, #FFA500); /* Degradê Dourado */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+            z-index: 10;
+            
+            /* Animação de entrada (Pop) */
+            transform: scale(0) rotate(-45deg);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+        }
+
+        /* Quando a classe 'meta-batida' é adicionada via JS */
+        .kpi-card.meta-batida {
+            border: 2px solid #FFD700 !important; /* Borda Dourada mais grossa */
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.15), inset 0 0 20px rgba(255, 215, 0, 0.05) !important;
+        }
+
+        /* Faz o troféu aparecer */
+        .kpi-card.meta-batida .trophy-badge {
+            transform: scale(1) rotate(0deg);
+            opacity: 1;
+        }
+
+        /* Muda a cor do valor para dourado */
+        .kpi-card.meta-batida .kpi-value {
+            color: #FFD700 !important;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        }
+
+        /* Ajuste para Light Mode (opcional, para garantir contraste) */
+        body.light-mode .kpi-card.meta-batida {
+            background: #fff;
+            box-shadow: 0 10px 40px -10px rgba(255, 215, 0, 0.3) !important;
+        }
     </style>
 </head>
 <body>
@@ -758,10 +806,11 @@
                     <div class="kpi-value" id="metaMes">R$ 0</div>
                     <div class="kpi-subtitle" id="mesRef">--/--</div>
                 </div>
-                <div class="kpi-card primary">
-                    <div class="kpi-label">Meta Diária</div>
-                    <div class="kpi-value" id="metaDia">R$ 0</div>
-                    <div class="kpi-subtitle">Valor faltante para hoje</div>
+                <div class="kpi-card primary" id="cardMetaDiaria">
+                    <div class="trophy-badge"><i class="ph-fill ph-trophy"></i></div>
+                    <div class="kpi-label">Status da Meta</div>
+                    <div class="kpi-value" id="metaDia">Calculando...</div>
+                    <div class="kpi-subtitle">Análise diária</div>
                 </div>
                 <div class="kpi-card success">
                     <div class="kpi-label">Valor em Vendas</div>
@@ -1139,6 +1188,62 @@
                     cardMetaSub.textContent = "Acumulado alto! Acelerar vendas.";
                 } else {
                     cardMetaValue.style.color = '#ffffff';
+                    cardMetaSub.textContent = `Para bater a meta em ${diasRestantes} dias`;
+                }
+            }
+
+            // Seleção direta do card pelo ID novo que criamos, ou pelo DOM se não mudou o HTML
+            const cardElement = document.getElementById('cardMetaDiaria') || cardContainer;
+
+            // Remove classes antigas para limpar o estado
+            cardElement.classList.remove('primary', 'success', 'danger', 'meta-batida');
+
+            if (faltaParaMeta <= 0) {
+                // === CENÁRIO: META BATIDA (O "TCHAN") ===
+                cardElement.classList.add('meta-batida'); // Ativa o CSS do troféu
+                
+                cardMetaLabel.textContent = "Meta Mensal Batida!";
+                cardMetaValue.textContent = "+" + formatCurrency(Math.abs(faltaParaMeta));
+                
+                // Texto de comemoração
+                cardMetaSub.innerHTML = "<i class='ph-bold ph-confetti'></i> Parabéns pelo resultado!";
+                cardMetaSub.style.color = "var(--text-secondary)";
+            
+            } else if (diasRestantes === 0) {
+                // CENÁRIO: MÊS ACABOU (Não bateu)
+                cardElement.classList.add('danger');
+                cardMetaLabel.textContent = "Faltou para a Meta";
+                cardMetaValue.textContent = formatCurrency(faltaParaMeta);
+                
+                if (document.body.classList.contains('light-mode')) {
+                    cardMetaValue.style.color = 'var(--accent-danger)';
+                } else {
+                    cardMetaValue.style.color = '#ffffff';
+                }
+                cardMetaSub.textContent = "Mês encerrado";
+
+            } else {
+                // CENÁRIO: MÊS CORRENDO (Normal)
+                cardElement.classList.add('primary');
+                cardMetaLabel.textContent = "Meta Diária Necessária";
+                cardMetaValue.textContent = formatCurrency(metaDiariaNecessaria);
+                
+                const metaDiariaPadrao = metaMesVal / diasNoMes;
+                
+                // Lógica de alerta amarelo se a meta diária ficar muito alta
+                if (metaDiariaNecessaria > (metaDiariaPadrao * 1.1)) {
+                    if (document.body.classList.contains('light-mode')) {
+                        cardMetaValue.style.color = 'var(--accent-warning)';
+                    } else {
+                        cardMetaValue.style.color = '#f59e0b';
+                    }
+                    cardMetaSub.textContent = "Acumulado alto! Acelerar vendas.";
+                } else {
+                    if (document.body.classList.contains('light-mode')) {
+                        cardMetaValue.style.color = 'var(--text-primary)';
+                    } else {
+                        cardMetaValue.style.color = '#ffffff';
+                    }
                     cardMetaSub.textContent = `Para bater a meta em ${diasRestantes} dias`;
                 }
             }
